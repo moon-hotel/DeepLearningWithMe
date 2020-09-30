@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 def make_data():
     num_samples = 500
     x = torch.linspace(-np.pi, np.pi, num_samples, dtype=torch.float32).reshape(-1, 1)
-    y = torch.sin(x)+torch.tensor(np.random.normal(0,0.05,[num_samples,1]))
+    y = torch.sin(x) + torch.tensor(np.random.normal(0, 0.05, [num_samples, 1]))
     return x, y
 
 
@@ -34,14 +34,13 @@ def train(x, y):
     epoches = 8000
     lr = 0.1
     w1 = torch.tensor(np.random.normal(0, 0.2, [input_nodes, hidden_nodes]), dtype=torch.float32, requires_grad=True)
-    b1 = torch.tensor(0, dtype=torch.float32, requires_grad=True)
+    b1 = torch.tensor(np.random.randn(hidden_nodes), dtype=torch.float32, requires_grad=True)
     w2 = torch.tensor(np.random.normal(0, 0.2, [hidden_nodes, output_nodes]), dtype=torch.float32, requires_grad=True)
-    b2 = torch.tensor(0, dtype=torch.float32, requires_grad=True)
+    b2 = torch.tensor(np.random.randn(output_nodes), dtype=torch.float32, requires_grad=True)
 
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1)
-    plt.pause(6)
-    ax.scatter(x, y,s=10)
+    ax.scatter(x, y, s=10)
     plt.ylim(-1, 1)
     plt.ion()
     plt.show()
@@ -57,7 +56,7 @@ def train(x, y):
                 pass
             lines = ax.plot(x, logits.detach().numpy())
             plt.pause(0.2)
-            print("Epoch:{}, Loss:{}".format(i,l))
+            print("Epoch:{}, Loss:{}".format(i, l))
     logits = forward(x, w1, b1, w2, b2)
     rmse = torch.sqrt(loss(y, logits))
     print(rmse)
