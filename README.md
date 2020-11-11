@@ -39,4 +39,5 @@
 
 - [卷积操作中的填充与池化](http://mp.weixin.qq.com/s?__biz=MzAwNjU0NjA3Ng==&mid=2247487902&idx=1&sn=15e1cef1ce15157f319b5d49de487097&chksm=9b0ae66dac7d6f7b7a2f53ed96258d98b0fd7dc842a177db2554b041d9f84f4761a36f29eb7d#rd)
 
-更新中……
+- [卷积池化与LeNet5网络模型](https://mp.weixin.qq.com/s/bFO1eaCCMERyvu4QSGyeaQ)
+
