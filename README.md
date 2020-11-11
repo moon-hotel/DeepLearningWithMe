@@ -41,3 +41,4 @@
 
 - [卷积池化与LeNet5网络模型](https://mp.weixin.qq.com/s/bFO1eaCCMERyvu4QSGyeaQ)
 
+- [LeNet5的继任者AlexNet模型](https://mp.weixin.qq.com/s/ckm_P7T219k8UGUVsI88OA)
