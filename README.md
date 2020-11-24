@@ -17,7 +17,7 @@
 
 - [Pytorch之Softmax多分类任务](http://mp.weixin.qq.com/s?__biz=MzAwNjU0NjA3Ng==&mid=2247486364&idx=1&sn=5f1a24c295aa343b1d46f2854072d2cd&chksm=9b0afc6fac7d7579d6e8b3f354eb0de701b5b0f781f9d939b36366a9ccf5c5cb2934ec235fa9#rd)
 
-- [-如何用逻辑回归来完成多分类？](http://mp.weixin.qq.com/s?__biz=MzAwNjU0NjA3Ng==&mid=2247486364&idx=2&sn=fdf4be921ee8e0f636d66eb6e2876ba0&chksm=9b0afc6fac7d75790784b8eafa57127110bd951b895a73c03817088331148dbe0f8d04dceced#rd)
+- [如何用逻辑回归来完成多分类？](http://mp.weixin.qq.com/s?__biz=MzAwNjU0NjA3Ng==&mid=2247486364&idx=2&sn=fdf4be921ee8e0f636d66eb6e2876ba0&chksm=9b0afc6fac7d75790784b8eafa57127110bd951b895a73c03817088331148dbe0f8d04dceced#rd)
 
 - [Pytorch之简洁实现Softmax多分类](http://mp.weixin.qq.com/s?__biz=MzAwNjU0NjA3Ng==&mid=2247486399&idx=1&sn=42bb7e006f44d514bcc068cafcbc7016&chksm=9b0afc4cac7d755a35259de3b042429b76d3f57c9d7b81432669cac60d9606131ac6cc2a7c37#rd)
 
@@ -34,11 +34,8 @@
 ## 第二部分：卷积神经网络
 
 - [看不懂卷积或许只是因为](http://mp.weixin.qq.com/s?__biz=MzAwNjU0NjA3Ng==&mid=2247487744&idx=1&sn=d00de73c71264e0bada8454217f84126&chksm=9b0ae6f3ac7d6fe516ab836e3ee593bfe0786cf3979282a2c8f469b05d6101985b20ec8f577a#rd)
-
 - [原来卷积是这么计算的](http://mp.weixin.qq.com/s?__biz=MzAwNjU0NjA3Ng==&mid=2247487828&idx=1&sn=9daa48ad9ade1ea3f66899cfa9da6a9f&chksm=9b0ae6a7ac7d6fb18c87a2fc869746f695553714b6f75647d53ae5ef791c66019ab67ce93550#rd)
-
 - [卷积操作中的填充与池化](http://mp.weixin.qq.com/s?__biz=MzAwNjU0NjA3Ng==&mid=2247487902&idx=1&sn=15e1cef1ce15157f319b5d49de487097&chksm=9b0ae66dac7d6f7b7a2f53ed96258d98b0fd7dc842a177db2554b041d9f84f4761a36f29eb7d#rd)
-
 - [卷积池化与LeNet5网络模型](https://mp.weixin.qq.com/s/bFO1eaCCMERyvu4QSGyeaQ)
-
 - [LeNet5的继任者AlexNet模型](https://mp.weixin.qq.com/s/ckm_P7T219k8UGUVsI88OA)
+- [一个可使用重复元素的网络](https://mp.weixin.qq.com/s/X7VDKcWTRdPvbOZ1Oz7TkQ)
