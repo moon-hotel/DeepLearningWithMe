@@ -40,6 +40,7 @@
 - [LeNet5的继任者AlexNet模型](https://mp.weixin.qq.com/s/ckm_P7T219k8UGUVsI88OA)
 - [VGG一个可使用重复元素的网络](https://mp.weixin.qq.com/s/X7VDKcWTRdPvbOZ1Oz7TkQ)
 - [NiN一个即使放到现在也不会过时的网络](https://mp.weixin.qq.com/s/dA1AATIrFMTjMk8FYGPqPw)
-
 - [厉害了！能把多尺度卷积说得这么高大上](https://mp.weixin.qq.com/s/3Z-_f4p73V20HEpEHsendA)
 - [你看这个网络它又宽又长](https://mp.weixin.qq.com/s/OWINukstH87Yldl99_gItw)
+- [不得不说的Batch Normalization](https://mp.weixin.qq.com/s/rqnKx-3F6YycfOVfN5JPlQ)
+- [Batch Normalization分析与实现](https://mp.weixin.qq.com/s/0vH7E2zw0vzr8J1bcNLbkA)
