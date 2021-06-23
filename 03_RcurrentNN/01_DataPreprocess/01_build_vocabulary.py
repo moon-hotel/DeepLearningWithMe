@@ -39,10 +39,11 @@ def build_vocab(tokenizer, filepath, word, min_freq, specials=None):
 if __name__ == '__main__':
     filepath = 'data_01.txt'
     vocab = build_vocab(tokenizer, filepath, word=True, min_freq=1,
-                        specials=['<unk>', '<pad>', '<bos>', '<eos>'])
+                        specials=['<unk>', '<pad>'])
     print(vocab.freqs)  # 得到一个字典，返回语料中每个单词所出现的频率；
     print(vocab.itos)  # 得到一个列表，返回词表中的每一个词；
     print(vocab.itos[2])  # 通过索引返回得到词表中对应的词；
     print(vocab.stoi)  # 得到一个字典，返回词表中每个词的索引；
     print(vocab.stoi['are'])  # 通过单词返回得到词表中对应的索引
+    print(vocab['are'])  # 通过单词返回得到词表中对应的索引
     print(len(vocab))
