@@ -1,7 +1,7 @@
 from collections import Counter
 from torchtext.vocab import Vocab
 import torch
-from torch.nn.utils.rnn import pad_sequence,pack_sequence
+from torch.nn.utils.rnn import pad_sequence, pack_sequence
 from torch.utils.data import DataLoader
 
 
@@ -90,17 +90,12 @@ class LoadEnglishGermanCorpus():
         """
         de_batch, en_batch = [], []
         for (de_item, en_item) in data_batch:  # 开始对一个batch中的每一个样本进行处理。
-            # print(de_item)
+            de_batch.append(de_item)  # 编码器输入序列不需要加起止符
             # 在每个idx序列的首位加上 起始token 和 结束 token
-            # tensor([9, 37, 46, 5, 42, 36, 11, 16, 7, 33, 24, 45, 13, 4])
-            de = torch.cat([torch.tensor([self.BOS_IDX]), de_item, torch.tensor([self.EOS_IDX])], dim=0)
-            # print(de)
-            # tensor([2, 9, 37, 46, 5, 42, 36, 11, 16, 7, 33, 24, 45, 13, 4, 3])
-            de_batch.append(de)
             en = torch.cat([torch.tensor([self.BOS_IDX]), en_item, torch.tensor([self.EOS_IDX])], dim=0)
             en_batch.append(en)
-        de_batch = pad_sequence(de_batch, padding_value=self.PAD_IDX)  # [de_len,batch_size]
         # 以最长的序列为标准进行填充
+        de_batch = pad_sequence(de_batch, padding_value=self.PAD_IDX)  # [de_len,batch_size]
         en_batch = pad_sequence(en_batch, padding_value=self.PAD_IDX)  # [en_len,batch_size]
         return de_batch, en_batch
 
