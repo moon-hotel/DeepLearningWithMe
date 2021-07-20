@@ -1,9 +1,5 @@
 # DeepLearningWithMe
-《**跟我一起深度学习**》
-
-**公众号：月来客栈，欢迎扫码关注！**
-
-<img src="https://moonhotel.oss-cn-shanghai.aliyuncs.com/images/000000.png" width="250" />
+#《**跟我一起深度学习**》
 
 ## 第一部分：前馈神经网络
 
