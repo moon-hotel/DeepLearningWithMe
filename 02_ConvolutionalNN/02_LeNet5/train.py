@@ -47,7 +47,7 @@ class MyModel:
                 if i % 50 == 0:
                     acc = (logits.argmax(1) == y).float().mean()
                     print("Epochs[{}/{}]---batch[{}/{}]---acc {:.4}---loss {:.4}".format(
-                        epoch, self.epochs, len(mnist_train) // self.batch_size, i, acc, l))
+                        epoch, self.epochs, len(mnist_train), i, acc, l))
 
             print("Epochs[{}/{}]--acc on test {:.4}".format(epoch, self.epochs, self.evaluate(test_iter, self.net)))
 
