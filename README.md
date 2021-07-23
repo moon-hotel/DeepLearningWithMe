@@ -1,5 +1,5 @@
 # DeepLearningWithMe
-#《**跟我一起深度学习**》
+# 《跟我一起深度学习》
 
 ## 第一部分：前馈神经网络
 
@@ -37,4 +37,4 @@
 ## 第五部分： Transformer网络模型
 - [This post is all you need（①多头注意力机制原理）](https://mp.weixin.qq.com/s/xBHyOGHWytgAbpKbwP45Nw)
 - [This post is all you need（②位置编码与编码解码过程）](https://mp.weixin.qq.com/s/AVU_rxYsPpS-BapBnShenA)
-
+- [This post is all you need（③网络结构与自注意力实现）](https://mp.weixin.qq.com/s/kcO4FoVOjoFZjOdzXAaZAA)
