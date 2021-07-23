@@ -26,7 +26,7 @@ def load_dataset(batch_size):
 def inference(data_iter, device, model_save_dir='./MODEL'):
     net = LeNet5()  # 初始化现有模型的权重参数
     net.to(device)
-    model_save_path = os.path.join(model_save_dir, 'model.pkl')
+    model_save_path = os.path.join(model_save_dir, 'model.pt')
     if os.path.exists(model_save_path):
         loaded_paras = torch.load(model_save_path)
         net.load_state_dict(loaded_paras)  # 用本地已有模型来重新初始化网络权重参数
