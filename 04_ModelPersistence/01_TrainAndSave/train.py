@@ -34,7 +34,7 @@ class MyModel:
         self.epochs = epochs
         self.learning_rate = learning_rate
         self.model_save_dir = model_save_dir
-        self.net = LeNet5()
+        self.model = LeNet5()
 
     def train(self):
         train_iter, test_iter = load_dataset(self.batch_size)
@@ -42,19 +42,19 @@ class MyModel:
         loss = nn.CrossEntropyLoss(reduction='mean')
         if not os.path.exists(self.model_save_dir):
             os.makedirs(self.model_save_dir)
-        model_save_path = os.path.join(self.model_save_dir, 'model.pkl')
+        model_save_path = os.path.join(self.model_save_dir, 'model.pt')
         if os.path.exists(model_save_path):
             loaded_paras = torch.load(model_save_path)
-            self.net.load_state_dict(loaded_paras)
+            self.model.load_state_dict(loaded_paras)
             print("#### 成功载入已有模型，进行追加训练...")
 
-        optimizer = torch.optim.Adam(self.net.parameters(), lr=self.learning_rate)  # 定义优化器
+        optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)  # 定义优化器
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.net.to(device)
+        self.model.to(device)
         for epoch in range(self.epochs):
             for i, (x, y) in enumerate(train_iter):
                 x, y = x.to(device), y.to(device)
-                logits = self.net(x)
+                logits = self.model(x)
                 l = loss(logits, y)
                 optimizer.zero_grad()
                 l.backward()
@@ -62,19 +62,19 @@ class MyModel:
                 if i % 100 == 0:
                     acc = (logits.argmax(1) == y).float().mean()
                     print("Epochs[{}/{}]---batch[{}/{}]---acc {:.4}---loss {:.4}".format(
-                        epoch, self.epochs, len(train_iter) // self.batch_size, i, acc, l))
+                        epoch, self.epochs, len(train_iter), i, acc, l))
 
             print("Epochs[{}/{}]--acc on test {:.4}".format(epoch, self.epochs,
-                                                            self.evaluate(test_iter, self.net, device)))
-            torch.save(self.net.state_dict(), model_save_path)
+                                                            self.evaluate(test_iter, self.model, device)))
+            torch.save(self.model.state_dict(), model_save_path)
 
     @staticmethod
-    def evaluate(data_iter, net, device):
+    def evaluate(data_iter, model, device):
         with torch.no_grad():
             acc_sum, n = 0.0, 0
             for x, y in data_iter:
                 x, y = x.to(device), y.to(device)
-                logits = net(x)
+                logits = model(x)
                 acc_sum += (logits.argmax(1) == y).float().sum().item()
                 n += len(y)
             return acc_sum / n

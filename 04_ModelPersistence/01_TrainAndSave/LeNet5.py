@@ -1,5 +1,4 @@
 import torch.nn as nn
-import torch
 
 
 class LeNet5(nn.Module):
@@ -30,7 +29,8 @@ class LeNet5(nn.Module):
 
 if __name__ == '__main__':
     model = LeNet5()
-    # print(model)
-    # print(model.fc[3])
-    x = torch.rand(32, 1, 28, 28)
-    logits = model(x)
+    # Print model's state_dict
+    print("Model's state_dict:")
+    for param_tensor in model.state_dict():
+        print(param_tensor, "\t", model.state_dict()[param_tensor].size())
+    print(model.state_dict().keys())
