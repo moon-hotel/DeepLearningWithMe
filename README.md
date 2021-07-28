@@ -35,6 +35,7 @@
 ## 第四部分：模型持久化与迁移运用
 
 ## 第五部分： Transformer网络模型
-- [This post is all you need（①多头注意力机制原理）](https://mp.weixin.qq.com/s/xBHyOGHWytgAbpKbwP45Nw)
-- [This post is all you need（②位置编码与编码解码过程）](https://mp.weixin.qq.com/s/AVU_rxYsPpS-BapBnShenA)
-- [This post is all you need（③网络结构与自注意力实现）](https://mp.weixin.qq.com/s/kcO4FoVOjoFZjOdzXAaZAA)
+- [This post is all you need（①多头注意力机制原理）](https://www.ylkz.life/deeplearning/p10553832/)
+- [This post is all you need（②位置编码与编码解码过程）](https://www.ylkz.life/deeplearning/p10770524/)
+- [This post is all you need（③网络结构与自注意力实现）](https://www.ylkz.life/deeplearning/p12158901/)
+- [This post is all you need（④Transformer的实现过程）](https://www.ylkz.life/deeplearning/p10391698/)
