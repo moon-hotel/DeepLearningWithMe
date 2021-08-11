@@ -31,6 +31,7 @@
 - [Batch Normalization分析与实现](https://mp.weixin.qq.com/s/0vH7E2zw0vzr8J1bcNLbkA)
 
 ## 第三部分：循环神经网络
+- [你还在手动构造词表？试试`torchtext.vocab`](https://www.ylkz.life/deeplearning/p10449077/)
 
 ## 第四部分：模型持久化与迁移运用
 
@@ -39,3 +40,4 @@
 - [This post is all you need（②位置编码与编码解码过程）](https://www.ylkz.life/deeplearning/p10770524/)
 - [This post is all you need（③网络结构与自注意力实现）](https://www.ylkz.life/deeplearning/p12158901/)
 - [This post is all you need（④Transformer的实现过程）](https://www.ylkz.life/deeplearning/p10391698/)
+- [This post is all you need（⑤基于Transformer的翻译模型）](https://www.ylkz.life/deeplearning/p10667939/)
