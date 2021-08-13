@@ -18,7 +18,6 @@ inputs = torch.tensor([0, 2, 0, 1, 0, 0, 2, 0, 1, 1, 2, 1, 2, 0, 0, 1, 0, 0, 1, 
                        1, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0]).reshape([1, 3, 5, 5])
 
 bias = torch.tensor([1])
-op = nn.Conv2d(in_channels=)
 result = F.conv2d(inputs, filters, bias=bias, stride=1, padding=0)
 
 print("输入数据为：", inputs)

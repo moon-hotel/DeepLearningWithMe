@@ -1,6 +1,17 @@
 import torch.nn.functional as F
 import torch
 
+filter = torch.tensor([[[[0, 0, 1],
+                         [0, 1, 1],
+                         [1, 0, -1]]],
+                       [[[1, 0, 0],
+                         [0, 0, 1],
+                         [1, 0, 1]]]])
+inputs = torch.tensor([1, 2, 0, -1, 0, 1, 1, 0, 0, 1, 2, -1, 2, 1, 0,
+                       -1, 1, 0, 0, 0, 2, 1, -1, 0, 0]).reshape([1, 1, 5, 5])
+bias = torch.tensor([1, 2])
+print(F.conv2d(inputs, filter, padding=0, bias=bias))
+
 filters = torch.tensor([[[[2, 0, 0],
                           [1, 0, 1],
                           [0, 3, 0]],
