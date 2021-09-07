@@ -32,6 +32,8 @@
 
 ## 第三部分：循环神经网络
 - [你还在手动构造词表？试试`torchtext.vocab`](https://www.ylkz.life/deeplearning/p10449077/)
+- [快速从零构建成DataLoader](https://www.ylkz.life/deeplearning/p10375540/)
+
 
 ## 第四部分：模型持久化与迁移运用
 
@@ -41,3 +43,4 @@
 - [This post is all you need（③网络结构与自注意力实现）](https://www.ylkz.life/deeplearning/p12158901/)
 - [This post is all you need（④Transformer的实现过程）](https://www.ylkz.life/deeplearning/p10391698/)
 - [This post is all you need（⑤基于Transformer的翻译模型）](https://www.ylkz.life/deeplearning/p10667939/)
+- [This post is all you need（⑥基于Transformer的分类模型）](https://www.ylkz.life/deeplearning/p10550146/)
