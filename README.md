@@ -44,3 +44,4 @@
 - [This post is all you need（④Transformer的实现过程）](https://www.ylkz.life/deeplearning/p10391698/)
 - [This post is all you need（⑤基于Transformer的翻译模型）](https://www.ylkz.life/deeplearning/p10667939/)
 - [This post is all you need（⑥基于Transformer的分类模型）](https://www.ylkz.life/deeplearning/p10550146/)
+- [This post is all you need（⑦基于Transformer的对联模型）](https://www.ylkz.life/deeplearning/p11017569/)
