@@ -1,6 +1,14 @@
 # DeepLearningWithMe
 # 《跟我一起深度学习》
 
+## 环境配置
+
+`Python`版本为3.6，其它包的版本信息见`requirements.txt`，使用如下命令即可完成安装。
+
+```python
+pip install -r requirements.txt
+```
+
 ## 第一部分：前馈神经网络
 
 - [你告诉我什么是深度学习](http://mp.weixin.qq.com/s?__biz=MzAwNjU0NjA3Ng==&mid=2247485889&idx=1&sn=306ad5015af4a60aad29cd48338afee6&chksm=9b0afe32ac7d77243a3b7e4dda7a49646018c5f33cd9e7d4cdcc6da76d04d4a5153df29d6498#rd)
