@@ -47,6 +47,7 @@ pip install -r requirements.txt
 
 ## 第四部分：模型持久化与迁移运用 [代码](04_ModelPersistence/README.md)
 - [PyTorch中模型的保存与迁移](https://www.ylkz.life/deeplearning/p12977315/)
+- [训练模型时如何便捷保存日志？](https://www.ylkz.life/tools/p10958151/)
 
 ## 第五部分： Transformer网络模型 [代码](05_Transformer/README.md)
 - [This post is all you need（①多头注意力机制原理）](https://www.ylkz.life/deeplearning/p10553832/) 
@@ -58,3 +59,4 @@ pip install -r requirements.txt
 - [This post is all you need（⑦基于Transformer的对联模型）](https://www.ylkz.life/deeplearning/p11017569/)
 - [This post is all you need（层层剥开Transformer）](https://mp.weixin.qq.com/s/uch_AGcSB8OSAeVu2sme8A)
 - [BERT原理与NSP和MLM](https://www.ylkz.life/deeplearning/p10631450/)
+- [从零实现BERT网络模型](https://mp.weixin.qq.com/s/8X9yr0n0xKt8dsh1ZoEr_A)

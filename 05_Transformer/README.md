@@ -14,6 +14,8 @@
   - [对联生成模型 代码](03_TransformerCouplet/README.md)
 - [This post is all you need（层层剥开Transformer）](https://mp.weixin.qq.com/s/uch_AGcSB8OSAeVu2sme8A)
 - [BERT原理与NSP和MLM](https://www.ylkz.life/deeplearning/p10631450/)
+- [从零实现BERT网络模型](https://mp.weixin.qq.com/s/8X9yr0n0xKt8dsh1ZoEr_A)
+  - [BERT实现 代码](https://github.com/moon-hotel/BertWithPretrained)
 
 
 ### [返回主页](../README.md)
