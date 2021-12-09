@@ -60,3 +60,4 @@ pip install -r requirements.txt
 - [This post is all you need（层层剥开Transformer）](https://mp.weixin.qq.com/s/uch_AGcSB8OSAeVu2sme8A)
 - [BERT原理与NSP和MLM](https://www.ylkz.life/deeplearning/p10631450/)
 - [从零实现BERT网络模型](https://mp.weixin.qq.com/s/8X9yr0n0xKt8dsh1ZoEr_A)
+- [基于BERT预训练模型的中文文本分类任务](https://www.ylkz.life/deeplearning/p10979382/) 

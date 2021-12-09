@@ -16,6 +16,7 @@
 - [BERT原理与NSP和MLM](https://www.ylkz.life/deeplearning/p10631450/)
 - [从零实现BERT网络模型](https://mp.weixin.qq.com/s/8X9yr0n0xKt8dsh1ZoEr_A)
   - [BERT实现 代码](https://github.com/moon-hotel/BertWithPretrained)
+  - [基于BERT预训练模型的中文文本分类任务 代码](https://github.com/moon-hotel/BertWithPretrained)
 
 
 ### [返回主页](../README.md)
