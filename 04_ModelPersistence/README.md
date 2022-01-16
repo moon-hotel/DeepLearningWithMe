@@ -5,5 +5,6 @@
   - [模型加载和推理 代码](02_LoadForInference)
   - [模型加载与训练 代码](03_LoadForTrain)
   - [模型载入与迁移 代码](04_LoadForTransfer)
+- [自定义学习率使用及恢复](05_CustomizedLrScheduler)
 
 ### [返回主页](../README.md)
