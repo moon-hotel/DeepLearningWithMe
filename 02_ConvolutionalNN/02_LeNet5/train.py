@@ -39,15 +39,14 @@ class MyModel:
         optimizer = torch.optim.Adam(self.net.parameters(), lr=self.learning_rate)  # 定义优化器
         for epoch in range(self.epochs):
             for i, (x, y) in enumerate(train_iter):
-                logits = self.net(x)
-                l = loss(logits, y)
+                loss, logits = self.net(x, y)
                 optimizer.zero_grad()
-                l.backward()
+                loss.backward()
                 optimizer.step()  # 执行梯度下降
                 if i % 50 == 0:
                     acc = (logits.argmax(1) == y).float().mean()
                     print("Epochs[{}/{}]---batch[{}/{}]---acc {:.4}---loss {:.4}".format(
-                        epoch, self.epochs, len(mnist_train), i, acc, l))
+                        epoch, self.epochs, len(mnist_train), i, acc, loss.item()))
 
             print("Epochs[{}/{}]--acc on test {:.4}".format(epoch, self.epochs, self.evaluate(test_iter, self.net)))
 
