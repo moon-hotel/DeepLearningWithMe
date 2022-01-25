@@ -45,7 +45,7 @@ pip install -r requirements.txt
 - [快速从零构建成DataLoader](https://www.ylkz.life/deeplearning/p10375540/)
 
 
-## 第四部分：模型持久化与迁移运用 [代码](04_ModelPersistence/README.md)
+## 第四部分：模型持久化与迁移运用 [代码](04_ModelTraining/README.md)
 - [PyTorch中模型的保存与迁移](https://www.ylkz.life/deeplearning/p12977315/)
 - [训练模型时如何便捷保存日志？](https://www.ylkz.life/tools/p10958151/)
 
@@ -62,3 +62,4 @@ pip install -r requirements.txt
 - [从零实现BERT网络模型](https://mp.weixin.qq.com/s/8X9yr0n0xKt8dsh1ZoEr_A)
 - [基于BERT预训练模型的中文文本分类任务](https://www.ylkz.life/deeplearning/p10979382/)
 - [基于BERT预训练模型的英文文本蕴含任务](https://www.ylkz.life/deeplearning/p10407402/)
+- [基于BERT预训练模型的SWAG问答任务](https://www.ylkz.life/deeplearning/p10700486/)
