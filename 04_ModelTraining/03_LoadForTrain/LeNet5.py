@@ -1,7 +1,4 @@
 import torch.nn as nn
-import torch
-import os
-
 
 class LeNet5(nn.Module):
     def __init__(self, ):
@@ -23,7 +20,12 @@ class LeNet5(nn.Module):
             nn.Linear(84, 10),
         )
 
-    def forward(self, img):
+    def forward(self, img, labels=None):
         output = self.conv(img)
-        output = self.fc(output)
-        return output
+        logits = self.fc(output)
+        if labels is not None:
+            loss_fct = nn.CrossEntropyLoss(reduction='mean')
+            loss = loss_fct(logits, labels)
+            return loss, logits
+        else:
+            return logits

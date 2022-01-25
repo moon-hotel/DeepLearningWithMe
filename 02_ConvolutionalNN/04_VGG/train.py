@@ -38,40 +38,38 @@ class MyModel:
         self.batch_size = batch_size
         self.epochs = epochs
         self.learning_rate = learning_rate
-        self.net = model
+        self.model = model
 
     def train(self):
         train_iter, test_iter = load_dataset(batch_size=self.batch_size, resize=224)
-
-        loss = nn.CrossEntropyLoss(reduction='mean')
-        optimizer = torch.optim.Adam(self.net.parameters(), lr=self.learning_rate)  # 定义优化器
+        optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)  # 定义优化器
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.net.to(device)
+        self.model.to(device)
         for epoch in range(self.epochs):
             for i, (x, y) in enumerate(train_iter):
-
                 x, y = x.to(device), y.to(device)
-                logits = self.net(x)
-                l = loss(logits, y)
+                loss, logits = self.model(x, y)
                 optimizer.zero_grad()
-                l.backward()
+                loss.backward()
                 optimizer.step()  # 执行梯度下降
                 if i % 50 == 0:
                     acc = (logits.argmax(1) == y).float().mean()
-                    print("Epochs[{}/{}]---batch {}---acc {:.4}---loss {:.4}".format(
-                        epoch + 1, self.epochs, i, acc, l))
-            self.net.eval()  # 切换到评估模式
+                    print("Epochs[{}/{}]---batch[{}/{}]---acc {:.4}---loss {:.4}".format(
+                        epoch + 1, self.epochs, i, len(train_iter), acc, loss.item()))
+
+
+            self.model.eval()  # 切换到评估模式
             print("Epochs[{}/{}]--acc on test {:.4}".format(epoch + 1, self.epochs,
-                                                            self.evaluate(test_iter, self.net, device)))
-            self.net.train()  # 切回到训练模式
+                                                            self.evaluate(test_iter, self.model, device)))
+            self.model.train()  # 切回到训练模式
 
     @staticmethod
-    def evaluate(data_iter, net, device):
+    def evaluate(data_iter, model, device):
         with torch.no_grad():
             acc_sum, n = 0.0, 0
             for x, y in data_iter:
                 x, y = x.to(device), y.to(device)
-                logits = net(x)
+                logits = model(x)
                 acc_sum += (logits.argmax(1) == y).float().sum().item()
                 n += len(y)
             return acc_sum / n

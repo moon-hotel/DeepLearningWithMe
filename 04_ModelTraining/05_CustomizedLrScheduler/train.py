@@ -55,6 +55,7 @@ class MyModel:
         lrs = []
         for epoch in range(self.epochs):
             for i, (x, y) in enumerate(train_iter):
+                x, y = x.to(self.device), y.to(self.device)
                 loss, logits = self.model(x, y)
                 optimizer.zero_grad()
                 loss.backward()
@@ -67,8 +68,8 @@ class MyModel:
                         epoch, self.epochs, len(mnist_train) // self.batch_size, i, acc, loss.item()))
 
             print("### Epochs [{}/{}]--acc on test {:.4}".format(epoch, self.epochs,
-                                                                 self.evaluate(test_iter, self.model)))
-        torch.save({'last_epoch': scheduler._step_count,
+                                                                 self.evaluate(test_iter, self.model, self.device)))
+        torch.save({'last_epoch': scheduler.last_eopch,
                     'model_state_dict': self.model.state_dict()},
                    './model.pt')
 
@@ -78,10 +79,11 @@ class MyModel:
         plt.show()
 
     @staticmethod
-    def evaluate(data_iter, net):
+    def evaluate(data_iter, net, device):
         with torch.no_grad():
             acc_sum, n = 0.0, 0
             for x, y in data_iter:
+                x, y = x.to(device), y.to(device)
                 logits = net(x)
                 acc_sum += (logits.argmax(1) == y).float().sum().item()
                 n += len(y)

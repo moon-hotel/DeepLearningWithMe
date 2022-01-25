@@ -1,7 +1,6 @@
 import torchvision
 import torchvision.transforms as transforms
 import torch
-import torch.nn as nn
 from LeNet6 import LeNet6
 from LeNet6 import para_state_dict
 import os
@@ -39,8 +38,6 @@ class MyModel:
 
     def train(self):
         train_iter, test_iter = load_dataset(self.batch_size)
-
-        loss = nn.CrossEntropyLoss(reduction='mean')
         if not os.path.exists(self.model_save_dir):
             os.makedirs(self.model_save_dir)
         model_save_path = os.path.join(self.model_save_dir, 'model_new.pt')
@@ -55,15 +52,14 @@ class MyModel:
         for epoch in range(self.epochs):
             for i, (x, y) in enumerate(train_iter):
                 x, y = x.to(device), y.to(device)
-                logits = self.model(x)
-                l = loss(logits, y)
+                loss, logits = self.model(x)
                 optimizer.zero_grad()
-                l.backward()
+                loss.backward()
                 optimizer.step()  # 执行梯度下降
                 if i % 100 == 0:
                     acc = (logits.argmax(1) == y).float().mean()
                     print("Epochs[{}/{}]---batch[{}/{}]---acc {:.4}---loss {:.4}".format(
-                        epoch, self.epochs, len(train_iter), i, acc, l))
+                        epoch, self.epochs, len(train_iter), i, acc, loss.item()))
 
             print("Epochs[{}/{}]--acc on test {:.4}".format(epoch, self.epochs,
                                                             self.evaluate(test_iter, self.model, device)))

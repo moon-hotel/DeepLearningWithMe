@@ -44,10 +44,15 @@ class AlexNet(nn.Module):
             nn.Linear(in_features=4096, out_features=10),
         )
 
-    def forward(self, img):
+    def forward(self, img, labels=None):
         feature = self.conv(img)
-        output = self.fc(feature)
-        return output
+        logits = self.fc(feature)
+        if labels is not None:
+            loss_fct = nn.CrossEntropyLoss(reduction='mean')
+            loss = loss_fct(logits, labels)
+            return loss, logits
+        else:
+            return logits
 
 
 if __name__ == '__main__':
@@ -55,4 +60,3 @@ if __name__ == '__main__':
     x = torch.rand(32, 1, 224, 224)
     model(x)
     print(model)
-

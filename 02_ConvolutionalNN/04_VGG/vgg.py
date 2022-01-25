@@ -35,16 +35,20 @@ class VGG(nn.Module):
             nn.Linear(4096, 4096),
             nn.ReLU(True),
             nn.Dropout(),
-            nn.Linear(4096, num_classes),
-        )
+            nn.Linear(4096, num_classes))
         if init_weights:
             self._initialize_weights()
 
-    def forward(self, x):
+    def forward(self, x, labels=None):
         x = self.features(x)
         x = self.avgpool(x)
-        x = self.classifier(x)
-        return x
+        logits = self.classifier(x)
+        if labels is not None:
+            loss_fct = nn.CrossEntropyLoss(reduction='mean')
+            loss = loss_fct(logits, labels)
+            return loss, logits
+        else:
+            return logits
 
     def _initialize_weights(self):
         for m in self.modules():

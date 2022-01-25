@@ -35,7 +35,6 @@ class MyModel:
                                                 batch_size=self.batch_size,
                                                 shuffle=True,
                                                 num_workers=1)
-        loss = nn.CrossEntropyLoss(reduction='mean')
         optimizer = torch.optim.Adam(self.net.parameters(), lr=self.learning_rate)  # 定义优化器
         for epoch in range(self.epochs):
             for i, (x, y) in enumerate(train_iter):
@@ -46,7 +45,7 @@ class MyModel:
                 if i % 50 == 0:
                     acc = (logits.argmax(1) == y).float().mean()
                     print("Epochs[{}/{}]---batch[{}/{}]---acc {:.4}---loss {:.4}".format(
-                        epoch, self.epochs, len(mnist_train), i, acc, loss.item()))
+                        epoch + 1, self.epochs, i, len(train_iter), acc, loss.item()))
 
             print("Epochs[{}/{}]--acc on test {:.4}".format(epoch, self.epochs, self.evaluate(test_iter, self.net)))
 

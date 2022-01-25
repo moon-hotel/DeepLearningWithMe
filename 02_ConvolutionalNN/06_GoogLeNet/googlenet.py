@@ -1,5 +1,4 @@
 import torch.nn as nn
-import torch.nn.functional as F
 import torch
 
 
@@ -87,39 +86,43 @@ class GoogLeNet(nn.Module):
         self.dropout = nn.Dropout(0.5)
         self.fc = nn.Linear(1024, num_classes)
 
-    def forward(self, x):
+    def forward(self, x, labels=None):
         x = self.conv1(x)
         x = self.maxpool1(x)
-        print(x.shape)
+        # print(x.shape)
         x = self.conv2(x)
         x = self.conv3(x)
         x = self.maxpool2(x)
-        print(x.shape)
+        # print(x.shape)
         x = self.inception3a(x)
         x = self.inception3b(x)
         x = self.maxpool3(x)
-        print(x.shape)
+        # print(x.shape)
         x = self.inception4a(x)
         x = self.inception4b(x)
         x = self.inception4c(x)
         x = self.inception4d(x)
         x = self.inception4e(x)
         x = self.maxpool4(x)
-        print(x.shape)
+        # print(x.shape)
         x = self.inception5a(x)
         x = self.inception5b(x)
 
         x = self.avgpool(x)
         # N x 1024 x 1 x 1
-        print(x.shape)
+        # print(x.shape)
         x = torch.flatten(x, 1)
         # N x 1024
-        print(x.shape)
+        # print(x.shape)
         x = self.dropout(x)
-        x = self.fc(x)
+        logits = self.fc(x)
         # N x 1000 (num_classes)
-
-        return x
+        if labels is not None:
+            loss_fct = nn.CrossEntropyLoss(reduction='mean')
+            loss = loss_fct(logits, labels)
+            return loss, logits
+        else:
+            return logits
 
 
 if __name__ == '__main__':

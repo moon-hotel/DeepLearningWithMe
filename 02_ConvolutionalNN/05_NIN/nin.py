@@ -13,7 +13,7 @@ class PrintLayer(nn.Module):
 
 
 class NiN(nn.Module):
-    def __init__(self,init_weights=True):
+    def __init__(self, init_weights=True):
         super(NiN, self).__init__()
 
         self.nin = nn.Sequential(
@@ -26,8 +26,7 @@ class NiN(nn.Module):
             nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
             nn.Dropout(0.5),
 
-
-            nn.Conv2d(in_channels=96, out_channels=192, kernel_size=5, stride=1, padding=2 ),
+            nn.Conv2d(in_channels=96, out_channels=192, kernel_size=5, stride=1, padding=2),
             nn.ReLU(inplace=True),
             nn.Conv2d(in_channels=192, out_channels=192, kernel_size=1, stride=1, padding=0),
             nn.ReLU(inplace=True),
@@ -36,7 +35,7 @@ class NiN(nn.Module):
             nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
             nn.Dropout(0.5),
 
-            nn.Conv2d(in_channels=192, out_channels=192, kernel_size=3, stride=1, padding=1 ),
+            nn.Conv2d(in_channels=192, out_channels=192, kernel_size=3, stride=1, padding=1),
             nn.ReLU(inplace=True),
             nn.Conv2d(in_channels=192, out_channels=192, kernel_size=1, stride=1, padding=0),
             nn.ReLU(inplace=True),
@@ -48,8 +47,14 @@ class NiN(nn.Module):
         if init_weights:
             self._initialize_weights()
 
-    def forward(self, x):
-        return self.nin(x)
+    def forward(self, x, labels=None):
+        logits = self.nin(x)
+        if labels is not None:
+            loss_fct = nn.CrossEntropyLoss(reduction='mean')
+            loss = loss_fct(logits, labels)
+            return loss, logits
+        else:
+            return logits
 
     def _initialize_weights(self):
         for m in self.modules():
@@ -58,9 +63,10 @@ class NiN(nn.Module):
                 if m.bias is not None:
                     nn.init.constant_(m.bias, 0)
 
+
 if __name__ == '__main__':
     X = torch.rand(1, 3, 32, 32)
     model = NiN()
     # print(model)
     y = model(X)
-    # print(y)
+    print(y.shape)
