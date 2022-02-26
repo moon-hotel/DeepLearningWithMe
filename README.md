@@ -45,9 +45,10 @@ pip install -r requirements.txt
 - [快速从零构建成DataLoader](https://www.ylkz.life/deeplearning/p10375540/)
 
 
-## 第四部分：模型持久化与迁移运用 [代码](04_ModelTraining/README.md)
+## 第四部分：模型训练 [代码](04_ModelTraining/README.md)
 - [PyTorch中模型的保存与迁移](https://www.ylkz.life/deeplearning/p12977315/)
 - [训练模型时如何便捷保存日志？](https://www.ylkz.life/tools/p10958151/)
+- [Transformers自定义学习了动态调整](https://www.ylkz.life/deeplearning/p10462014/)
 
 ## 第五部分： Transformer网络模型 [代码](05_Transformer/README.md)
 - [This post is all you need（①多头注意力机制原理）](https://www.ylkz.life/deeplearning/p10553832/) 
