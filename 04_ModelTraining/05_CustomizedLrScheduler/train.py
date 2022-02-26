@@ -80,6 +80,7 @@ class MyModel:
 
     @staticmethod
     def evaluate(data_iter, net, device):
+        net.eval()
         with torch.no_grad():
             acc_sum, n = 0.0, 0
             for x, y in data_iter:
@@ -87,6 +88,7 @@ class MyModel:
                 logits = net(x)
                 acc_sum += (logits.argmax(1) == y).float().sum().item()
                 n += len(y)
+            net.train()
             return acc_sum / n
 
 
