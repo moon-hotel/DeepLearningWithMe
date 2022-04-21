@@ -43,41 +43,33 @@ def build_vocab(tokenizer, filepath, word, min_freq, specials=None):
 def pad_sequence(sequences, batch_first=False, max_len=None, padding_value=0):
     """
     对一个List中的元素进行padding
-    Args:
+    Pad a list of variable length Tensors with ``padding_value``
+    a = torch.ones(25)
+    b = torch.ones(22)
+    c = torch.ones(15)
+    pad_sequence([a, b, c],max_len=None).size()
+    torch.Size([25, 3])
         sequences:
         batch_first: 是否把batch_size放到第一个维度
         padding_value:
-        max_len : 最大句子长度，默认为None，即在每个batch中以最长样本的长度对其它样本进行padding；
-                  当指定max_len的长度小于一个batch中某个样本的长度，那么在这个batch中还是会以最长样本的长度对其它样本进行padding
-                  建议指定max_len的值为整个数据集中最长样本的长度
-        from torch.nn.utils.rnn import pad_sequence
-        a = torch.ones(25, 300)
-        b = torch.ones(22, 300) # [seq_len, batch_size]
-        c = torch.ones(15, 300)
-        pad_sequence([a, b, c]).size()
-        torch.Size([25, 3, 300])
+        max_len :
+                当max_len = 50时，表示以某个固定长度对样本进行padding，多余的截掉；
+                当max_len=None是，表示以当前batch中最长样本的长度对其它进行padding；
     Returns:
-
     """
-    max_size = sequences[0].size()
-    trailing_dims = max_size[1:]
-    length = max_len
-    max_len = max([s.size(0) for s in sequences])
-    if length is not None:
-        max_len = max(length, max_len)
-    if batch_first:
-        out_dims = (len(sequences), max_len) + trailing_dims
-    else:
-        out_dims = (max_len, len(sequences)) + trailing_dims
-    out_tensor = sequences[0].data.new(*out_dims).fill_(padding_value)
-    for i, tensor in enumerate(sequences):
-        length = tensor.size(0)
-        # use index notation to prevent duplicate references to the tensor
-        if batch_first:
-            out_tensor[i, :length, ...] = tensor
+    if max_len is None:
+        max_len = max([s.size(0) for s in sequences])
+    out_tensors = []
+    for tensor in sequences:
+        if tensor.size(0) < max_len:
+            tensor = torch.cat([tensor, torch.tensor([padding_value] * (max_len - tensor.size(0)))], dim=0)
         else:
-            out_tensor[:length, i, ...] = tensor
-    return out_tensor
+            tensor = tensor[:max_len]
+        out_tensors.append(tensor)
+    out_tensors = torch.stack(out_tensors, dim=1)
+    if batch_first:
+        return out_tensors.transpose(0, 1)
+    return out_tensors
 
 
 class LoadSentenceClassificationDataset():
@@ -120,7 +112,7 @@ class LoadSentenceClassificationDataset():
         [(tensor([61, 36, 58, 45, 33, 37, 40,  4, 39, 18, 16, 23, 12, 49, 35, 30, 51,  3]), tensor(0)),
          (tensor([ 5,  5,  7,  7,  8, 24, 18,  4,  7,  7,  5,  5,  6, 10, 34,  3]), tensor(0)) ...]
         """
-        raw_iter = iter(open(filepath, encoding="utf8"))
+        raw_iter = open(filepath, encoding="utf8").readlines()
         data = []
         max_len = 0
         for raw in raw_iter:
@@ -184,17 +176,13 @@ if __name__ == '__main__':
     path = 'data_02.txt'
     data_loader = LoadSentenceClassificationDataset(train_file_path=path,
                                                     tokenizer=tokenizer,
-                                                    batch_size=2,
+                                                    batch_size=5,
                                                     word=True,
-                                                    max_sen_len='same')
+                                                    max_sen_len=None)
 
     train_iter, valid_iter, test_iter = data_loader.load_train_val_test_data(path, path, path)
     for sen, label in train_iter:
         print("batch:", sen)
-        # batch: tensor([[6, 14, 10, 25, 19, 21, 11, 4, 13, 8, 20, 22, 26, 12, 27, 3, 1, 1],
-        #                [61, 36, 58, 45, 33, 37, 40, 4, 39, 18, 16, 23, 12, 49, 35, 30, 51, 3]])
-        print("batch size:", sen.shape)
-        # batch size: torch.Size([2, 18])
+        print("batch shape:", sen.shape)
         print("labels:", label)
-        # labels: tensor([1, 0])
         print("\n")
