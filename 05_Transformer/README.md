@@ -18,6 +18,7 @@
   - [BERT实现 代码](https://github.com/moon-hotel/BertWithPretrained)
 - [基于BERT预训练模型的中文文本分类任务 代码](https://github.com/moon-hotel/BertWithPretrained)
 - [基于BERT预训练模型的英文文本蕴含任务 代码](https://github.com/moon-hotel/BertWithPretrained)
-
-
+- [基于BERT预训练模型的英文多选项(SWAG)任务](https://github.com/moon-hotel/BertWithPretrained)
+- [基于BERT预训练模型的英文问答(SQuAD)任务](https://github.com/moon-hotel/BertWithPretrained) 
+- [基于NSL和MLM任务从头训练BERT任务](https://github.com/moon-hotel/BertWithPretrained)
 ### [返回主页](../README.md)

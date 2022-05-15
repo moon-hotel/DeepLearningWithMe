@@ -65,3 +65,4 @@ pip install -r requirements.txt
 - [4. 基于BERT预训练模型的英文文本蕴含(MNLI)任务](https://www.ylkz.life/deeplearning/p10407402/)
 - [5. 基于BERT预训练模型的英文多选项(SWAG)任务](https://mp.weixin.qq.com/s/GqsbMBNt9XcFIjmumR04Pg)
 - [6. 基于BERT预训练模型的英文问答(SQuAD)任务](https://www.ylkz.life/deeplearning/p10265968/) 
+- [7. 基于NSL和MLM任务从头训练BERT任务](https://mp.weixin.qq.com/s/2Vtxv1Wj9knEFKUyUeQ_6w)
