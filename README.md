@@ -58,7 +58,7 @@ pip install -r requirements.txt
 - [This post is all you need（⑤基于Transformer的翻译模型）](https://www.ylkz.life/deeplearning/p10667939/)
 - [This post is all you need（⑥基于Transformer的分类模型）](https://www.ylkz.life/deeplearning/p10550146/)
 - [This post is all you need（⑦基于Transformer的对联模型）](https://www.ylkz.life/deeplearning/p11017569/)
-- [This post is all you need（层层剥开Transformer）](https://mp.weixin.qq.com/s/uch_AGcSB8OSAeVu2sme8A)
+- [This post is all you need（上卷）——层层剥开Transformer](https://mp.weixin.qq.com/s/uch_AGcSB8OSAeVu2sme8A)
 - [1. BERT原理与NSL和MLM](https://www.ylkz.life/deeplearning/p10631450/)
 - [2. 从零实现BERT网络模型](https://www.ylkz.life/deeplearning/p10602241/) 
 - [3. 基于BERT预训练模型的中文文本分类任务](https://www.ylkz.life/deeplearning/p10979382/)
@@ -66,3 +66,4 @@ pip install -r requirements.txt
 - [5. 基于BERT预训练模型的英文多选项(SWAG)任务](https://mp.weixin.qq.com/s/GqsbMBNt9XcFIjmumR04Pg)
 - [6. 基于BERT预训练模型的英文问答(SQuAD)任务](https://www.ylkz.life/deeplearning/p10265968/) 
 - [7. 基于NSL和MLM任务从头训练BERT任务](https://mp.weixin.qq.com/s/2Vtxv1Wj9knEFKUyUeQ_6w)
+- [This post is all you need（下卷）——步步走进BERT](https://mp.weixin.qq.com/s/tQELF16n5O1-3cvapeaf4Q)
