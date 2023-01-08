@@ -34,7 +34,7 @@ def train(x, y):
     epochs = 1000
     lr = 0.003
     input_node = x.shape[1]
-    hidden_node = 50
+    hidden_node = 80
     output_node = 1
     losses = []
     net = nn.Sequential(nn.Linear(input_node, hidden_node),
