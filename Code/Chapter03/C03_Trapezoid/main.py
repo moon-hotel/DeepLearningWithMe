@@ -1,6 +1,6 @@
 """
 文件名: Code/Chapter03/C02_Trapezoid/main.py
-创建时间: 2023/1/7 18:16 下午
+创建时间: 2023/1/7 6:16 下午
 """
 import numpy as np
 import torch
