@@ -1,6 +1,9 @@
 """
 文件名: Code/Chapter03/C01_HousePrice/house_price.py
 创建时间: 2023/1/7 2:48 下午
+作 者: @空字符
+公众号: @月来客栈
+知 乎: @月来客栈 https://www.zhihu.com/people/the_lastest
 """
 
 import numpy as np
