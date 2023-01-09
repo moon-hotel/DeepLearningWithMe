@@ -13,8 +13,8 @@ import matplotlib.pyplot as plt
 
 def make_trapezoid_data():
     np.random.seed(20)
-    x1 = np.random.randint(5, 10, [50, 1]) / 10
-    x2 = np.random.randint(10, 16, [50, 1]) / 10
+    x1 = np.random.uniform(0.5, 1.5, [50, 1])
+    x2 = np.random.uniform(0.5, 1.5, [50, 1])
     x = np.hstack((x1, x2))
     # 在这里我们便得到了一个50行2列的样本数据，其中第一列为上底，第二列为下底
     y = 0.5 * (x1 + x2) * x1
@@ -25,6 +25,7 @@ def make_trapezoid_data():
 
 def visualization_loss(losses):
     plt.plot(range(len(losses)), losses)
+    plt.ylim(-0.1, 0.6)
     plt.xlabel('epochs')
     plt.ylabel('loss')
     plt.show()
@@ -32,7 +33,8 @@ def visualization_loss(losses):
 
 def train(x, y):
     epochs = 1000
-    lr = 0.003
+    # lr = 0.1
+    lr = 0.125
     input_node = x.shape[1]
     hidden_node = 80
     output_node = 1
@@ -55,24 +57,24 @@ def train(x, y):
     print("RMSE: {}".format(torch.sqrt(l / 2)))
     print("真实值：", y[:5].detach().numpy().reshape(-1))
     print("预测值：", logits[:5].detach().numpy().reshape(-1))
+    print("预测结果：", net(torch.tensor([[0.6, 0.8], [0.7, 1.5]])))
     return losses
 
 
-# Epoch: 0, loss: 0.21947528421878815
-# Epoch: 1, loss: 0.15144017338752747
-# Epoch: 2, loss: 0.09904950112104416
-# Epoch: 3, loss: 0.062260374426841736
-# Epoch: 4, loss: 0.04036729037761688
-# Epoch: 5, loss: 0.03167763724923134
-# Epoch: 6, loss: 0.033266790211200714
-# Epoch: 7, loss: 0.04110710322856903
-# Epoch: 8, loss: 0.05081081762909889
+# Epoch: 1, loss: 21.451648712158203
+# Epoch: 2, loss: 1.7119826078414917
+# Epoch: 3, loss: 2.09726619720459
+# Epoch: 4, loss: 6.766840934753418
+# Epoch: 5, loss: 7.076871395111084
+# Epoch: 6, loss: 4.739165306091309
+# Epoch: 7, loss: 2.368345260620117
 # ......
-# Epoch: 998, loss: 0.00018733780598267913
-# Epoch: 999, loss: 0.0001872947468655184
-# RMSE: 0.009676053188741207
-# 真实值： [0.84  0.7   0.855 0.665 0.54 ]
-# 预测值： [0.83861655 0.7117218  0.85532755 0.6754495  0.54401684]
+# Epoch: 997, loss: 5.002863326808438e-05
+# Epoch: 998, loss: 4.9905607738764957e-05
+# Epoch: 999, loss: 4.978356810170226e-05
+# RMSE: 0.004983085673302412
+# 真实值： [1.2635546  1.6118135  1.8578457  1.7236208  0.48818496]
+# 预测值： [1.2622473 1.620144  1.855083  1.7280536 0.5039229]
 
 if __name__ == '__main__':
     x, y = make_trapezoid_data()
