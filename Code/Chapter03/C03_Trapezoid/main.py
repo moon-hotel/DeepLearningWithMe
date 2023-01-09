@@ -25,7 +25,7 @@ def make_trapezoid_data():
 
 def visualization_loss(losses):
     plt.plot(range(len(losses)), losses)
-    plt.ylim(-0.1, 0.6)
+    plt.ylim(-0.1, 0.5)
     plt.xlabel('epochs')
     plt.ylabel('loss')
     plt.show()
@@ -33,7 +33,6 @@ def visualization_loss(losses):
 
 def train(x, y):
     epochs = 1000
-    # lr = 0.1
     lr = 0.125
     input_node = x.shape[1]
     hidden_node = 80
