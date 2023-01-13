@@ -4,16 +4,19 @@
     - [1.2 使用Conda](Chapter01_Installation/Ch01.2_CondaUsage.md)
     - [1.3 开发环境](Chapter01_Installation/Ch01.3_IDEConfig.md)
 - 第 2 章 深度学习简介
-    - []
 - 第 3 章  深度学习基础
     - [3.1 线性回归](Chapter03/Ch03.1_LinearRegression.md)
-    - [3.2 逻辑回归与多分类]
-    - [3.3 多层感知机]
-    - [3.4 反向传播算法]
-    - [3.5 评价指标]
-    - [3.6 特征标准化]
-    - [3.7 过拟合与正则化]
-    - [3.8 偏差方差与交叉验证]
+    - [3.2 线性回归简洁实现](Chapter03/Ch03.2_LinearRegressionImp.md)
+    - [3.3 梯度下降与反向传播](Chapter03/Ch03.3_GDandBP.md)
+    - [3.4 从零实现多层神经网络](Chapter03/Ch03.4_MLImp.md)
+    - [3.5 逻辑回归](Chapter03/Ch03.5_LogisticsRegression.md)
+    - [3.6 逻辑回归简洁实现]
+    - [3.7 Softmax回归]
+    - [3.8 从零实现Softmax回归]
+    - [3.9 评价指标]
+    - [3.10 特征标准化]
+    - [3.11 过拟合与正则化]
+    - [3.12 偏差方差与交叉验证]
 
 
 
