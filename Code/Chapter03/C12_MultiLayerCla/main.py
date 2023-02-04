@@ -60,7 +60,8 @@ def crossEntropy(y_true, logits):
     :param logits:  one-hot [m,n]
     :return:
     """
-    return -np.sum(y_true * np.log(logits)) / len(y_true)
+    loss = y_true * np.log(logits)
+    return -np.sum(loss) / len(y_true)
 
 
 def softmax(x):
@@ -70,7 +71,7 @@ def softmax(x):
     """
     s = np.exp(x)
     # 因为np.sum(s, axis=1)操作后变量的维度会减一，为了保证广播机制正常
-    # 所以设置 keepdims=True 保存维度不变
+    # 所以设置 keepdims=True 保持维度不变
     return s / np.sum(s, axis=1, keepdims=True)
 
 
@@ -95,17 +96,17 @@ def forward(x, w1, b1, w2, b2, w3, b3):
 
 def backward(a4, a3, a2, a1, w3, w2, y):
     m = a4.shape[0]
-    delta4 = a4 - y
-    grad_w3 = 1 / m * np.matmul(a3.T, delta4)
-    grad_b3 = 1 / m * np.sum(delta4, axis=0)
+    delta4 = a4 - y  # [m,c]
+    grad_w3 = 1 / m * np.matmul(a3.T, delta4)  # [hidden_nodes,c]
+    grad_b3 = 1 / m * np.sum(delta4, axis=0)  # [c]
 
-    delta3 = np.matmul(delta4, w3.T) * (a3 * (1 - a3))
-    grad_w2 = 1 / m * np.matmul(a2.T, delta3)  # [h,m]@[m,c]=[h,c]
-    grad_b2 = 1 / m * (np.sum(delta3, axis=0))  # [m,]
+    delta3 = np.matmul(delta4, w3.T) * (a3 * (1 - a3))  # [m,hidden_nodes]
+    grad_w2 = 1 / m * np.matmul(a2.T, delta3)  # [hidden_nodes,hidden_nodes]
+    grad_b2 = 1 / m * (np.sum(delta3, axis=0))  # [hidden_nodes,]
 
-    delta2 = np.matmul(delta3, w2.T) * (a2 * (1 - a2))  # [m,h]
-    grad_w1 = 1 / m * np.matmul(a1.T, delta2)  # [n,h]
-    grad_b1 = 1 / m * (np.sum(delta2, axis=0))  # [h,]
+    delta2 = np.matmul(delta3, w2.T) * (a2 * (1 - a2))  # [m,hidden_nodes]
+    grad_w1 = 1 / m * np.matmul(a1.T, delta2)  # [input_nodes, hidden_nodes]
+    grad_b1 = 1 / m * (np.sum(delta2, axis=0))  # [hidden_nodes,]
     return [grad_w1, grad_b1, grad_w2, grad_b2, grad_w3, grad_b3]
 
 
@@ -153,12 +154,23 @@ def evaluate(x, y, net, w1, b1, w2, b2, w3, b3):
     return acc_sum / n
 
 
+def visualization_loss(losses):
+    import matplotlib.pyplot as plt
+    plt.plot(range(len(losses)), losses)
+    plt.xlabel('epochs', fontsize=15)
+    plt.ylabel('loss', fontsize=15)
+    # plt.ylim(-.05, 0.5)
+    plt.tight_layout()
+    plt.show()
+
+
 def train(x_data, y_data):
     input_nodes = 28 * 28
     hidden_nodes = 1024
     output_nodes = 10
     epochs = 2
     lr = 0.03
+    losses = []
     batch_size = 64
     w1 = np.random.uniform(-0.3, 0.3, [input_nodes, hidden_nodes])
     b1 = np.zeros(hidden_nodes)
@@ -181,15 +193,27 @@ def train(x_data, y_data):
                 acc = accuracy(y, logits)
                 print(f"Epochs[{epoch + 1}/{epochs}]--batch[{i}/{len(x_data) // batch_size}]"
                       f"--Acc: {round(acc, 4)}--loss: {round(loss, 4)}")
+            losses.append(loss)
     acc = evaluate(x_data, y_data, forward, w1, b1, w2, b2, w3, b3)
     print(f"Acc: {acc}")
+    return losses, w1, b1, w2, b2, w3, b3
+
+
+def prediction(x, w1, b1, w2, b2, w3, b3):
+    x = x.reshape(-1, 784)
+    logits, _, _ = forward(x, w1, b1, w2, b2, w3, b3)
+    return np.argmax(logits, axis=1)
 
 
 #
 #
 if __name__ == '__main__':
     x, y = load_dataset()
-    train(x, y)
+    losses, w1, b1, w2, b2, w3, b3 = train(x, y)
+    visualization_loss(losses)
+    y_pred = prediction(x[0], w1, b1, w2, b2, w3, b3)
+    print(f"预测标签为: {y_pred}, 真实标签为: {y[0]}")
+
     # Epochs[1/2]--batch[0/937]--Acc: 0.1406--loss: 5.1525
     # Epochs[1/2]--batch[5/937]--Acc: 0.1562--loss: 2.5282
     # Epochs[1/2]--batch[10/937]--Acc: 0.2188--loss: 2.3137
@@ -199,4 +223,4 @@ if __name__ == '__main__':
     # ......
     # Epochs[2/2]--batch[930/937]--Acc: 0.9844--loss: 0.0769
     # Epochs[2/2]--batch[935/937]--Acc: 1.0--loss: 0.0262
-    # Acc: 0.9127833333333333
+    # Acc: 0.9115333333333333
