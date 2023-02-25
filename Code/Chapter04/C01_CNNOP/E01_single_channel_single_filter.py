@@ -1,6 +1,9 @@
 """
 文件名: Code/Chapter04/C01_CNNOP/E01_single_channel_single_filter.py
 创建时间: 2023/2/19 8:41 下午
+作 者: @空字符
+公众号: @月来客栈
+知 乎: @月来客栈 https://www.zhihu.com/people/the_lastest
 """
 import torch.nn.functional as F
 import torch
