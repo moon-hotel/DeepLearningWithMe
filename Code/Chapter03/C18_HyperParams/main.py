@@ -17,12 +17,13 @@ import numpy as np
 
 def evaluate(data_iter, net):
     net.eval()
-    acc_sum, n = 0.0, 0
-    for x, y in data_iter:
-        logits = net(x)
-        acc_sum += (logits.argmax(1) == y).float().sum().item()
-        n += len(y)
-    return round(acc_sum / n, 4)
+    with torch.no_grad():
+        acc_sum, n = 0.0, 0
+        for x, y in data_iter:
+            logits = net(x)
+            acc_sum += (logits.argmax(1) == y).float().sum().item()
+            n += len(y)
+        return round(acc_sum / n, 4)
 
 
 def load_dataset():
