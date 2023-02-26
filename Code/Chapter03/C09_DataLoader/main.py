@@ -7,14 +7,14 @@
 """
 import torchvision
 from torch.utils.data import DataLoader
-from torchvision.datasets import FashionMNIST
+from torchvision.datasets import MNIST
 from torch.utils.data import TensorDataset
 import torch
 import numpy as np
 
 
 def DataLoader1():
-    data_loader = FashionMNIST(root='~/Datasets/FashionMNIST',
+    data_loader = MNIST(root='~/Datasets/MNIST',
                                download=True,
                                transform=torchvision.transforms.ToTensor())
     data_iter = DataLoader(data_loader, batch_size=32)
