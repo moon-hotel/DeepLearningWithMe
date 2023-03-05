@@ -7,6 +7,7 @@ from LeNet5 import LeNet5
 import os
 import tensorflow as tf
 import tensorboard as tb
+from copy import deepcopy
 
 tf.io.gfile = tb.compat.tensorflow_stub.io.gfile
 
@@ -86,7 +87,7 @@ class MyModel:
                                  global_step=scheduler.last_epoch)
             if test_acc > max_test_acc:
                 max_test_acc = test_acc
-                state_dict = self.model.state_dict()
+                state_dict = deepcopy(self.model.state_dict())
             torch.save({'last_epoch': scheduler.last_epoch,
                         'model_state_dict': state_dict},
                        './model.pt')
