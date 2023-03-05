@@ -18,8 +18,6 @@ import logging
 sys.path.append("../../")
 from Chapter04.C03_LeNet5.LeNet5 import LeNet5
 from Chapter05.C02_LogManage.log_manage import logger_init
-from copy import deepcopy
-import os
 import tensorflow as tf
 import tensorboard as tb
 
@@ -30,12 +28,12 @@ text_labels = ['t-shirt', 'trouser', 'pullover', 'dress', 'coat',
 
 
 def load_dataset(batch_size=64):
-    mnist_train = FashionMNIST(root='~/Datasets/FashionMNIST', train=True,
-                               download=True, transform=transforms.ToTensor())
-    mnist_test = FashionMNIST(root='~/Datasets/FashionMNIST', train=False,
-                              download=True, transform=transforms.ToTensor())
-    train_iter = DataLoader(mnist_train, batch_size=batch_size, shuffle=True)
-    test_iter = DataLoader(mnist_test, batch_size=batch_size, shuffle=True)
+    fashion_train = FashionMNIST(root='~/Datasets/FashionMNIST', train=True,
+                                 download=True, transform=transforms.ToTensor())
+    fashion_test = FashionMNIST(root='~/Datasets/FashionMNIST', train=False,
+                                download=True, transform=transforms.ToTensor())
+    train_iter = DataLoader(fashion_train, batch_size=batch_size, shuffle=True)
+    test_iter = DataLoader(fashion_test, batch_size=batch_size, shuffle=True)
     return train_iter, test_iter
 
 
@@ -112,9 +110,9 @@ def evaluate(data_iter, model, device):
         return acc_sum / n, torch.cat(all_logits, dim=0), y_labels, torch.cat(images, dim=0)
 
 
-def inference(model, mnist_test):
-    y_true = mnist_test.targets[:5]
-    imgs = mnist_test.data[:5].unsqueeze(1).to(torch.float32)
+def inference(model, fashion_test):
+    y_true = fashion_test.targets[:5]
+    imgs = fashion_test.data[:5].unsqueeze(1).to(torch.float32)
     with torch.no_grad():
         logits = model(imgs)
     y_pred = logits.argmax(1)
