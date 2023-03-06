@@ -1,5 +1,5 @@
 """
-文件名: Code/Chapter06/C04_ModelSaving/train.py
+文件名: Code/Chapter05/C04_ModelSaving/train.py
 创建时间: 2023/3/5 7:52 下午
 作 者: @空字符
 公众号: @月来客栈
@@ -63,6 +63,7 @@ def train(config):
     model = LeNet5()
 
     if os.path.exists(config.model_save_path):
+        logging.info(f" # 载入模型{config.model_save_path}进行追加训练...")
         checkpoint = torch.load(config.model_save_path)
         model.load_state_dict(checkpoint)
 
