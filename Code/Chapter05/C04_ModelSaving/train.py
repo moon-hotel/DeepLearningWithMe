@@ -49,7 +49,7 @@ class ModelConfig(object):
         self.batch_size = batch_size
         self.epochs = epochs
         self.learning_rate = learning_rate
-        self.model_save_path = 'model.pt'
+        self.model_save_path = 'lenet5.pt'
         self.summary_writer_dir = "runs/lenet5"
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         logger_init(log_file_name='lenet5', log_level=logging.INFO, log_dir='log')
@@ -131,10 +131,11 @@ def inference(config, test_iter):
     test_data = test_iter.dataset
     model = LeNet5()
     if os.path.exists(config.model_save_path):
+        logging.info(f" # 载入模型进行推理……")
         checkpoint = torch.load(config.model_save_path)
         model.load_state_dict(checkpoint)
     else:
-        raise ValueError(f"模型{config.model_save_path}不存在！")
+        raise ValueError(f" # 模型{config.model_save_path}不存在！")
     y_true = test_data.targets[:5]
     imgs = test_data.data[:5].unsqueeze(1).to(torch.float32)
     with torch.no_grad():
