@@ -45,13 +45,14 @@ class LeNet6(nn.Module):
         state_dict = deepcopy(model.state_dict())
         for key in state_dict:  # 在新的网络模型中遍历对应参数
             if key in loaded_paras and state_dict[key].size() == loaded_paras[key].size():
-                logging.info("成功初始化参数:", key)
+                logging.info(f"成功初始化参数: {key}")
                 state_dict[key] = loaded_paras[key]
                 if freeze:
                     frozen_list.append(key)
         if len(frozen_list) > 0:
             for (name, param) in model.named_parameters():
                 if name in frozen_list:
+                    logging.info(f"冻结参数{name}")
                     param.requires_grad = False
         model.load_state_dict(state_dict)
         return model
