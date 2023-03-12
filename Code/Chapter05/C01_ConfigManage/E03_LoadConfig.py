@@ -25,7 +25,7 @@ class ModelConfig(object):
         """从json配置文件读取配置信息"""
         with open(json_file, 'r') as reader:
             text = reader.read()
-        model_config = ModelConfig()
+        model_config = cls()
         for (key, value) in dict(json.loads(text)).items():
             model_config.__dict__[key] = value
         return model_config
