@@ -80,6 +80,7 @@ def train(config):
     model.train()
     for epoch in range(config.epochs):
         for i, (x, y) in enumerate(train_iter):
+            # print(f"LeNet6模型中第一层权重参数（部分）为：{model.state_dict()['conv.0.weight'][0, 0]}") 验证
             x, y = x.to(config.device), y.to(config.device)
             loss, logits = model(x, y)
             optimizer.zero_grad()
