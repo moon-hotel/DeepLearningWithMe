@@ -69,6 +69,11 @@ class LeNet6(nn.Module):
 
 
 if __name__ == '__main__':
+    print("\n=====Model paras in LeNet6:")
+    model = LeNet6()
+    for (name, param) in model.state_dict().items():
+        print(name, param.size())
+
     model_save_path = os.path.join('../C04_ModelSaving', 'lenet5.pt')
     print("\n=====Model paras in LeNet5:")
     loaded_paras = torch.load(model_save_path)
@@ -76,15 +81,11 @@ if __name__ == '__main__':
         print(name, param.size())
     print(f"LeNet5模型中第一层权重参数（部分）为：{loaded_paras['conv.0.weight'][0, 0]}")
 
-    print("\n=====Model paras in LeNet6:")
-    model = LeNet6()
-    for (name, param) in model.state_dict().items():
-        print(name, param.size())
-
     print("\n=====Load model from pretrained ")
-
     model = LeNet6.from_pretrained('../C04_ModelSaving', freeze=True)
-    model.eval()
     print(f"LeNet6模型中第一层权重参数（部分）为：{model.state_dict()['conv.0.weight'][0, 0]}")
+
+
+
     for (name, param) in model.named_parameters():
         print(name, param.size(), " --- is_trainable:", param.requires_grad)
