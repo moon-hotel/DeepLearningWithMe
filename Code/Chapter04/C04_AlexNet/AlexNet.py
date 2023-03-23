@@ -14,7 +14,7 @@ class AlexNet(nn.Module):
     def __init__(self, in_channels=3, num_classes=1000, dropout=0.5):
         super(AlexNet, self).__init__()
         self.conv = nn.Sequential(
-            nn.Conv2d(in_channels=in_channels, out_channels=96, kernel_size=11, stride=4),
+            nn.Conv2d(in_channels=in_channels, out_channels=96, kernel_size=11, stride=4, padding=2),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=3, stride=2),  # kernel_size, stride
             nn.Conv2d(in_channels=96, out_channels=256, kernel_size=5, stride=1, padding=2),
@@ -31,7 +31,7 @@ class AlexNet(nn.Module):
         # 这里全连接层的输出个数比LeNet5中的大数倍。使用了丢弃层Dropout来缓解过拟合
         self.fc = nn.Sequential(
             nn.Flatten(),
-            nn.Linear(in_features=256 * 5 * 5, out_features=4096),
+            nn.Linear(in_features=256 * 6 * 6, out_features=4096),
             nn.ReLU(inplace=True),
             nn.Dropout(p=dropout),
             nn.Linear(in_features=4096, out_features=4096),
@@ -54,4 +54,4 @@ if __name__ == '__main__':
     model = AlexNet(in_channels=1)
     x = torch.rand(32, 1, 224, 224)
     out = model(x)
-    print(out.shape) # torch.Size([32, 1000])
+    print(out.shape)  # torch.Size([32, 1000])
