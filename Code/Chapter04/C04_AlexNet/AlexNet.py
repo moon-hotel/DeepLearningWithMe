@@ -1,5 +1,5 @@
 """
-文件名: Code/Chapter04/C03_LeNet5/LeNet5.py
+文件名: Code/Chapter04/C04_AlexNet/AlexNet.py
 创建时间: 2023/3/22 8:29 下午
 作 者: @空字符
 公众号: @月来客栈
@@ -35,7 +35,7 @@ class AlexNet(nn.Module):
             nn.ReLU(inplace=True),
             nn.Dropout(p=dropout),
             nn.Linear(in_features=4096, out_features=4096),
-            nn.ReLU(),
+            nn.ReLU(inplace=True),
             nn.Dropout(p=dropout),
             nn.Linear(in_features=4096, out_features=num_classes))
 
