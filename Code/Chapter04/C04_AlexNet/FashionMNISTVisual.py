@@ -1,6 +1,9 @@
 """
 文件名: Code/Chapter04/C04_AlexNet/FashionMNISTVisual.py
 创建时间: 2023/3/25 7:55 下午
+作 者: @空字符
+公众号: @月来客栈
+知 乎: @月来客栈 https://www.zhihu.com/people/the_lastest
 """
 from torchvision.datasets import FashionMNIST
 import torchvision.transforms as transforms

@@ -1,7 +1,9 @@
 """
 文件名: Code/Chapter04/C04_AlexNet/img_augmentation.py
 创建时间: 2023/3/24 19:23 下午
-
+作 者: @空字符
+公众号: @月来客栈
+知 乎: @月来客栈 https://www.zhihu.com/people/the_lastest
 """
 from PIL import Image
 from torchvision import transforms
