@@ -35,10 +35,10 @@ class VGGNet(nn.Module):
     def __init__(self, features, config):
         super(VGGNet, self).__init__()
         self.features = features
-        self.avgpool = nn.AdaptiveAvgPool2d((7, 7))
         self.classifier = nn.Sequential(
+            nn.MaxPool2d(kernel_size=2, stride=2),
             nn.Flatten(),
-            nn.Linear(512 * 7 * 7, 4096),
+            nn.Linear(512 * 3 * 3, 4096),
             nn.ReLU(True),
             nn.Dropout(),
             nn.Linear(4096, 4096),
@@ -50,7 +50,6 @@ class VGGNet(nn.Module):
 
     def forward(self, x, labels=None):
         x = self.features(x)
-        x = self.avgpool(x)
         logits = self.classifier(x)
         if labels is not None:
             loss_fct = nn.CrossEntropyLoss(reduction='mean')
