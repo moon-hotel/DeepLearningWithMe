@@ -91,3 +91,6 @@ if __name__ == '__main__':
     y = vgg13(x)
     print(y)
     print(y.shape)
+    # tensor([[-0.0017, -0.0261, -0.0275, -0.0067, -0.0419, -0.0358, -0.0022,  0.0367,
+    #          -0.0127, -0.0105]], grad_fn=<AddmmBackward0>)
+    # torch.Size([1, 10])
