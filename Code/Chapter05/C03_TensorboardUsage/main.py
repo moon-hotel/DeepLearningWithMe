@@ -10,9 +10,13 @@ from torch.utils.tensorboard import SummaryWriter
 import numpy as np
 import torch
 import torchvision
+from torchvision import datasets, transforms
 import matplotlib.pyplot as plt
 
-
+def load_dataset():
+    mnist_test = datasets.FashionMNIST(root='~/Datasets/FashionMNIST', train=False, download=True,
+                                       transform=transforms.ToTensor())
+    return mnist_test
 def add_scalar(writer):
     for n_iter in range(100):
         writer.add_scalar(tag='Loss/train',
@@ -150,6 +154,9 @@ if __name__ == '__main__':
     add_image(writer)
     add_images(writer)
     add_figure(writer)
-    add_figures(writer)
+    mnist_test = load_dataset()
+    images = mnist_test.data[:10]
+    labels = mnist_test.targets[:10]
+    add_figures(writer,images, labels)
     add_embedding(writer)
     writer.close()
