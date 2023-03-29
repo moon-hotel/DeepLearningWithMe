@@ -55,3 +55,12 @@ if __name__ == '__main__':
     x = torch.rand(32, 1, 224, 224)
     out = model(x)
     print(out.shape)  # torch.Size([32, 1000])
+    no_layer = 0
+    for seq in model.children():
+        for layer in seq:
+            x = layer(x)
+            if hasattr(layer, 'weight'):
+                no_layer += 1
+                print(f"网络层{no_layer}: {layer.__class__.__name__}, 输出形状: {x.shape}")
+            else:
+                print(f"网络层: {layer.__class__.__name__}, 输出形状: {x.shape}")

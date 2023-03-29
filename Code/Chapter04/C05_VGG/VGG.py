@@ -94,3 +94,12 @@ if __name__ == '__main__':
     # tensor([[-0.0017, -0.0261, -0.0275, -0.0067, -0.0419, -0.0358, -0.0022,  0.0367,
     #          -0.0127, -0.0105]], grad_fn=<AddmmBackward0>)
     # torch.Size([1, 10])
+    no_layer = 0
+    for seq in vgg13.children():
+        for layer in seq:
+            x = layer(x)
+            if hasattr(layer, 'weight'):
+                no_layer += 1
+                print(f"网络层{no_layer}: {layer.__class__.__name__}, 输出形状: {x.shape}")
+            else:
+                print(f"网络层: {layer.__class__.__name__}, 输出形状: {x.shape}")

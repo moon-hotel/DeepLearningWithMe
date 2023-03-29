@@ -55,4 +55,13 @@ if __name__ == '__main__':
     print(model.conv[3])
     x = torch.rand(32, 1, 28, 28)
     logits = model(x)
-    print(f"模型输出结果的形状为：{logits.shape}")
+    print(f"模型输出结果的形状为：{logits.shape}\n")
+    no_layer = 0
+    for seq in model.children():
+        for layer in seq:
+            x = layer(x)
+            if hasattr(layer, 'weight'):
+                no_layer += 1
+                print(f"网络层{no_layer}: {layer.__class__.__name__}, 输出形状: {x.shape}")
+            else:
+                print(f"网络层: {layer.__class__.__name__}, 输出形状: {x.shape}")
