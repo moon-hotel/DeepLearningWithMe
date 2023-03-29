@@ -51,7 +51,8 @@ def load_dataset(config, is_train=True):
     trans = transforms.Compose(trans)
     dataset = CIFAR10(root='~/Datasets/CIFAR10', train=is_train,
                       download=True, transform=trans)
-    iter = DataLoader(dataset, batch_size=config.batch_size, shuffle=True)
+    iter = DataLoader(dataset, batch_size=config.batch_size, shuffle=True,
+                      num_workers=1, pin_memory=False)  # 根据需要调整
     return iter
 
 
