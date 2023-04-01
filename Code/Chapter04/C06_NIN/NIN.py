@@ -31,7 +31,7 @@ class NIN(nn.Module):
             nin_block(in_chs=96, out_chs=[192, 192, 192], k_size=5, s=1, p=2),
             nn.MaxPool2d(kernel_size=3, stride=2), nn.Dropout(0.5),
             nin_block(in_chs=192, out_chs=[192, 192, 10], k_size=3, s=1, p=1),
-            nn.ReLU(inplace=True), nn.AdaptiveAvgPool2d(output_size=1), nn.Flatten())
+            nn.AdaptiveAvgPool2d(output_size=1), nn.Flatten())
         if init_weights:
             self._initialize_weights()
 
