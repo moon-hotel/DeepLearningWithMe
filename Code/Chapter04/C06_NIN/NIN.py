@@ -21,6 +21,7 @@ def nin_block(in_chs, out_chs=None, k_size=5, s=1, p=2):
 
 
 class NIN(nn.Module):
+    # ref: https://github.com/mavenlin/cuda-convnet/blob/master/NIN/cifar-10_def
     def __init__(self, init_weights=True):
         super(NIN, self).__init__()
 
@@ -30,7 +31,7 @@ class NIN(nn.Module):
             nin_block(in_chs=96, out_chs=[192, 192, 192], k_size=5, s=1, p=2),
             nn.MaxPool2d(kernel_size=3, stride=2), nn.Dropout(0.5),
             nin_block(in_chs=192, out_chs=[192, 192, 10], k_size=3, s=1, p=1),
-            nn.ReLU(inplace=True), nn.AdaptiveAvgPool2d(1), nn.Flatten())
+            nn.ReLU(inplace=True), nn.AdaptiveAvgPool2d(output_size=1), nn.Flatten())
         if init_weights:
             self._initialize_weights()
 
