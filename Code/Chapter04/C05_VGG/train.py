@@ -24,7 +24,7 @@ from utils import logger_init
 
 class ModelConfig(object):
     def __init__(self, ):
-        self.batch_size = 64
+        self.batch_size = 128
         self.epochs = 5
         self.learning_rate = 0.001
         self.in_channels = 3
