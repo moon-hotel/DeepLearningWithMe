@@ -14,7 +14,7 @@ class BasicConv2d(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0):
         super(BasicConv2d, self).__init__()
         self.conv = nn.Conv2d(in_channels, out_channels,
-                              kernel_size, stride, padding, bias=False)
+                              kernel_size, stride, padding)
         self.relu = nn.ReLU(inplace=True)
 
     def forward(self, x):
@@ -77,14 +77,13 @@ class GoogLeNet(nn.Module):
                            nn.MaxPool2d(kernel_size=3, stride=2, padding=1))
 
         s5 = nn.Sequential(Inception(832, 256, 160, 320, 32, 128, 128),  # inception5a
-                           Inception(832, 384, 192, 384, 48, 128, 128),  # inception5b
-                           nn.AdaptiveAvgPool2d((1, 1)), nn.Flatten(),
+                           Inception(832, 384, 192, 384, 48, 128, 128))  # inception5b
+        s6 = nn.Sequential(nn.AdaptiveAvgPool2d((1, 1)), nn.Flatten(),
                            nn.Dropout(0.5), nn.Linear(1024, num_classes))
-        self.google_net = nn.Sequential(s1, s2, s3, s4, s5)
+        self.google_net = nn.Sequential(s1, s2, s3, s4, s5, s6)
 
     def forward(self, x, labels=None):
-        logits = self.google_net(x)
-        # N x 1000 (num_classes)
+        logits = self.google_net(x) # N x 1000 (num_classes)
         if labels is not None:
             loss_fct = nn.CrossEntropyLoss(reduction='mean')
             loss = loss_fct(logits, labels)
@@ -94,7 +93,7 @@ class GoogLeNet(nn.Module):
 
 
 if __name__ == '__main__':
-    model = GoogLeNet(10,3)
+    model = GoogLeNet(1000, 3)
     print(model)
     x = torch.randn(2, 3, 224, 224)
     for seq in model.children():
