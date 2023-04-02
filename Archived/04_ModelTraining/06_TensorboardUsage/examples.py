@@ -58,7 +58,7 @@ def add_image(writer):
     writer.add_image('img/imag1', img1)
     img2 = np.random.randn(100, 100, 3)
     writer.add_image('img/imag2', img2, dataformats='HWC')
-    img = Image.open('./dufu.png')
+    img = Image.open('dufu.png')
     img_array = np.array(img)
     writer.add_image('local/dufu', img_array, dataformats='HWC')
 

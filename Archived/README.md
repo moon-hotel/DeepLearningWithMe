@@ -9,7 +9,7 @@
 pip install -r requirements.txt
 ```
 
-## 第一部分：前馈神经网络 [代码](./01_DeepForwardNN/README.md)
+## 第一部分：前馈神经网络 [代码](01_DeepForwardNN/README.md)
 
 - [你告诉我什么是深度学习](https://mp.weixin.qq.com/s/AEBhMs2Ke2XR2GbJFUAuYQ)
 - [这样拟合正弦函数你会吗？](https://mp.weixin.qq.com/s/wQecLuwS9oqEcaB0d9ksSA)
@@ -23,7 +23,7 @@ pip install -r requirements.txt
 - [你还不会实现反向传播?](https://mp.weixin.qq.com/s/KdlOuuzfwqbNQNUMZXp5Mw)
 - [Softmax+Cross entropy 梯度检验](https://mp.weixin.qq.com/s/uTVv8EJPSdEiApZk11ubSw)
 
-## 第二部分：卷积神经网络 [代码](./02_ConvolutionalNN/README.md)
+## 第二部分：卷积神经网络 [代码](02_ConvolutionalNN/README.md)
 
 - [看不懂卷积或许只是因为](https://mp.weixin.qq.com/s/Bu6JDoXfiiNklw8UGmjxpA)
 - [原来卷积是这么计算的](https://zhuanlan.zhihu.com/p/268179286)

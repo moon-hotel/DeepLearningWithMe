@@ -50,7 +50,7 @@ class LeNet6(nn.Module):
 
 
 if __name__ == '__main__':
-    model_save_path = os.path.join('./MODEL', 'model.pt')
+    model_save_path = os.path.join('MODEL', 'model.pt')
     loaded_paras = torch.load(model_save_path)
     for param_tensor in loaded_paras:
         print(param_tensor, "\t", loaded_paras[param_tensor].size())
