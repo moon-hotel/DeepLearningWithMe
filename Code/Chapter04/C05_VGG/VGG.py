@@ -36,9 +36,8 @@ class VGGNet(nn.Module):
         super(VGGNet, self).__init__()
         self.features = features
         self.classifier = nn.Sequential(
-            nn.MaxPool2d(kernel_size=2, stride=2),
             nn.Flatten(),
-            nn.Linear(512 * 3 * 3, 4096),
+            nn.Linear(512 * 7 * 7, 4096),
             nn.ReLU(True),
             nn.Dropout(),
             nn.Linear(4096, 4096),
@@ -103,3 +102,37 @@ if __name__ == '__main__':
                 print(f"网络层{no_layer}: {layer.__class__.__name__}, 输出形状: {x.shape}")
             else:
                 print(f"网络层: {layer.__class__.__name__}, 输出形状: {x.shape}")
+
+    # 网络层1: Conv2d, 输出形状: torch.Size([1, 64, 224, 224])
+    # 网络层: ReLU, 输出形状: torch.Size([1, 64, 224, 224])
+    # 网络层2: Conv2d, 输出形状: torch.Size([1, 64, 224, 224])
+    # 网络层: ReLU, 输出形状: torch.Size([1, 64, 224, 224])
+    # 网络层: MaxPool2d, 输出形状: torch.Size([1, 64, 112, 112])
+    # 网络层3: Conv2d, 输出形状: torch.Size([1, 128, 112, 112])
+    # 网络层: ReLU, 输出形状: torch.Size([1, 128, 112, 112])
+    # 网络层4: Conv2d, 输出形状: torch.Size([1, 128, 112, 112])
+    # 网络层: ReLU, 输出形状: torch.Size([1, 128, 112, 112])
+    # 网络层: MaxPool2d, 输出形状: torch.Size([1, 128, 56, 56])
+    # 网络层5: Conv2d, 输出形状: torch.Size([1, 256, 56, 56])
+    # 网络层: ReLU, 输出形状: torch.Size([1, 256, 56, 56])
+    # 网络层6: Conv2d, 输出形状: torch.Size([1, 256, 56, 56])
+    # 网络层: ReLU, 输出形状: torch.Size([1, 256, 56, 56])
+    # 网络层: MaxPool2d, 输出形状: torch.Size([1, 256, 28, 28])
+    # 网络层7: Conv2d, 输出形状: torch.Size([1, 512, 28, 28])
+    # 网络层: ReLU, 输出形状: torch.Size([1, 512, 28, 28])
+    # 网络层8: Conv2d, 输出形状: torch.Size([1, 512, 28, 28])
+    # 网络层: ReLU, 输出形状: torch.Size([1, 512, 28, 28])
+    # 网络层: MaxPool2d, 输出形状: torch.Size([1, 512, 14, 14])
+    # 网络层9: Conv2d, 输出形状: torch.Size([1, 512, 14, 14])
+    # 网络层: ReLU, 输出形状: torch.Size([1, 512, 14, 14])
+    # 网络层10: Conv2d, 输出形状: torch.Size([1, 512, 14, 14])
+    # 网络层: ReLU, 输出形状: torch.Size([1, 512, 14, 14])
+    # 网络层: MaxPool2d, 输出形状: torch.Size([1, 512, 7, 7])
+    # 网络层: Flatten, 输出形状: torch.Size([1, 25088])
+    # 网络层11: Linear, 输出形状: torch.Size([1, 4096])
+    # 网络层: ReLU, 输出形状: torch.Size([1, 4096])
+    # 网络层: Dropout, 输出形状: torch.Size([1, 4096])
+    # 网络层12: Linear, 输出形状: torch.Size([1, 4096])
+    # 网络层: ReLU, 输出形状: torch.Size([1, 4096])
+    # 网络层: Dropout, 输出形状: torch.Size([1, 4096])
+    # 网络层13: Linear, 输出形状: torch.Size([1, 10])
