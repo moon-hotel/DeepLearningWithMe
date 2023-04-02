@@ -1,6 +1,6 @@
 """
-文件名: Code/Chapter04/C05_VGG/train.py
-创建时间: 2023/3/27 19:55 下午
+文件名: Code/Chapter04/C06_NIN/train.py
+创建时间: 2023/3/27 7:55 下午
 作 者: @空字符
 公众号: @月来客栈
 知 乎: @月来客栈 https://www.zhihu.com/people/the_lastest
@@ -24,7 +24,7 @@ from utils import logger_init
 
 class ModelConfig(object):
     def __init__(self, ):
-        self.batch_size = 2
+        self.batch_size = 128
         self.epochs = 5
         self.learning_rate = 0.001
         self.in_channels = 3

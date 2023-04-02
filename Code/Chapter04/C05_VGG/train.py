@@ -1,6 +1,6 @@
 """
 文件名: Code/Chapter04/C05_VGG/train.py
-创建时间: 2023/3/27 19:55 下午
+创建时间: 2023/3/27 7:55 下午
 作 者: @空字符
 公众号: @月来客栈
 知 乎: @月来客栈 https://www.zhihu.com/people/the_lastest
