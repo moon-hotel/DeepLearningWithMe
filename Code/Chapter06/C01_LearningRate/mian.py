@@ -70,4 +70,3 @@ if __name__ == '__main__':
     plt.plot(range(steps), lrs, label=name)
     plt.legend(fontsize=13)
     plt.show()
-from torch.optim.lr_scheduler import LambdaLR
