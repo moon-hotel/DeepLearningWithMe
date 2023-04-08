@@ -23,6 +23,7 @@ def evaluate(data_iter, net):
             logits = net(x)
             acc_sum += (logits.argmax(1) == y).float().sum().item()
             n += len(y)
+        net.train()
         return round(acc_sum / n, 4)
 
 
@@ -49,7 +50,6 @@ def get_model(input_node=28 * 28,
 
 
 def train(train_iter, val_iter, net, lr=0.03, weight_decay=0., epochs=1):
-    net.train()
     loss = nn.CrossEntropyLoss()  # 定义损失函数
     optimizer = torch.optim.SGD(net.parameters(), lr=lr, weight_decay=weight_decay)  # 定义优化器
     for epoch in range(epochs):
@@ -122,7 +122,7 @@ if __name__ == '__main__':
                                                            lr=lr)
                     params = {"hidden_layer": hidden_layer, "p": p,
                               "weight_decay": weight_decay, "lr": lr,
-                              "mean_val_acc": mean_val_acc}
+                              "mean_val_acc": round(mean_val_acc,4)}
                     if mean_val_acc > best_val_acc:
                         best_val_acc = mean_val_acc
                         best_model = model

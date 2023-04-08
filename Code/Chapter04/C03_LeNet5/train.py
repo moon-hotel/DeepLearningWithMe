@@ -31,7 +31,6 @@ def train(mnist_train, mnist_test):
     train_iter = DataLoader(mnist_train, batch_size=batch_size, shuffle=True)
     test_iter = DataLoader(mnist_test, batch_size=batch_size, shuffle=True)
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)  # 定义优化器
-    model.train()
     for epoch in range(epochs):
         for i, (x, y) in enumerate(train_iter):
             loss, logits = model(x, y)
@@ -54,10 +53,12 @@ def evaluate(data_iter, model):
             logits = model(x)
             acc_sum += (logits.argmax(1) == y).float().sum().item()
             n += len(y)
+        model.train()
         return acc_sum / n
 
 
 def inference(model, mnist_test):
+    model.eval()
     y_true = mnist_test.targets[:5]
     imgs = mnist_test.data[:5].unsqueeze(1).to(torch.float32)
     with torch.no_grad():

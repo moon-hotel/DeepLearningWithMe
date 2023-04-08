@@ -124,12 +124,14 @@ def evaluate(data_iter, model, device):
             y_pred = logits.argmax(1).view(-1)
             y_labels += (text_labels[i] for i in y_pred)
             images.append(x)
+        model.train()
         return acc_sum / n, torch.cat(all_logits, dim=0), y_labels, torch.cat(images, dim=0)
 
 
 def inference(config, test_iter):
     test_data = test_iter.dataset
     model = LeNet5()
+    model.eval()
     if os.path.exists(config.model_save_path):
         logging.info(f" # 载入模型进行推理……")
         checkpoint = torch.load(config.model_save_path)

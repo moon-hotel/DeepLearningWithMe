@@ -76,7 +76,6 @@ def train(config):
     writer = SummaryWriter(config.summary_writer_dir)
     model = model.to(config.device)
     max_test_acc = 0
-    model.train()
     global_steps = 0
     for epoch in range(config.epochs):
         for i, (x, y) in enumerate(train_iter):
@@ -110,12 +109,14 @@ def evaluate(data_iter, model, device):
             logits = model(x)
             acc_sum += (logits.argmax(1) == y).float().sum().item()
             n += len(y)
+        model.train()
         return acc_sum / n
 
 
 def inference(config, test_iter):
     model = AlexNet(config.in_channels, config.num_classes)
     model.to(config.device)
+    model.eval()
     if os.path.exists(config.model_save_path):
         logging.info(f" # 载入模型进行推理……")
         checkpoint = torch.load(config.model_save_path)
