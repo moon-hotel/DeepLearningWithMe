@@ -1,5 +1,5 @@
 """
-文件名: Code/Chapter06/C02_BN/LeNet5.py
+文件名: Code/Chapter06/C03_BN/LeNet5.py
 创建时间: 2023/4/7 4:26 下午
 """
 import torch.nn as nn

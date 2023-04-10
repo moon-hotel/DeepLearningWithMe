@@ -1,5 +1,5 @@
 """
-文件名: Code/Chapter06/C02_BN/train.py
+文件名: Code/Chapter06/C03_BN/train.py
 创建时间: 2023/4/7 9:55 下午
 作 者: @空字符
 公众号: @月来客栈
@@ -93,3 +93,4 @@ if __name__ == '__main__':
 # Epochs[1/3]--batch[850/938]--Acc: 0.9844--loss: 0.0594
 # Epochs[1/3]--batch[900/938]--Acc: 1.0--loss: 0.0322
 # Epochs[1/3]--Acc on test 0.9808
+    torch.nn.utils.clip_grad_norm_()

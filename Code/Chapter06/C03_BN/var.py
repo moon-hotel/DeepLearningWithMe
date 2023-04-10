@@ -1,5 +1,5 @@
 """
-文件名: Code/Chapter06/C02_GradientClip/main.py
+文件名: Code/Chapter06/C03_GradientClip/main.py
 创建时间: 2023/4/4 3:26 下午
 """
 
