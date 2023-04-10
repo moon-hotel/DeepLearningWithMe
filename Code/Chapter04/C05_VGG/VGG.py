@@ -39,10 +39,10 @@ class VGGNet(nn.Module):
             nn.Flatten(),
             nn.Linear(512 * 7 * 7, 4096),
             nn.ReLU(True),
-            nn.Dropout(),
+            nn.Dropout(config.prob_dropout),
             nn.Linear(4096, 4096),
             nn.ReLU(True),
-            nn.Dropout(),
+            nn.Dropout(config.prob_dropout),
             nn.Linear(4096, config.num_classes))
         if config.init_weights:
             self._initialize_weights()

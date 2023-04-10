@@ -24,17 +24,19 @@ from utils import logger_init
 
 class ModelConfig(object):
     def __init__(self, ):
-        self.batch_size = 128
-        self.epochs = 5
-        self.learning_rate = 0.001
+        self.batch_size = 64
+        self.epochs = 15
+        self.learning_rate = 0.0002
+        self.prob_dropout = 0.5
         self.in_channels = 3
         self.num_classes = 10
         self.resize = 224  # 将输入的28*28的图片，resize成224*224的形状
-        self.vgg_type = 'A'
+        self.vgg_type = 'D'
+        self.augment = True
         self.num_classes = 10
         self.init_weights = True
-        self.model_save_path = 'vgg11.pt'
-        self.summary_writer_dir = "runs/vgg11"
+        self.model_save_path = 'vgg.pt'
+        self.summary_writer_dir = "runs/vgg"
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         # 判断是否存在GPU设备，其中0表示指定第0块设备
         logger_init(log_file_name='vgg', log_level=logging.INFO, log_dir='log')
@@ -48,6 +50,9 @@ def load_dataset(config, is_train=True):
     if config.resize:  # 将输入的32*32的图片，resize成224*224的形状
         trans.append(transforms.Resize(size=config.resize,
                                        interpolation=InterpolationMode.BILINEAR))
+    if config.augment and is_train:
+        trans += [transforms.RandomHorizontalFlip(0.5),
+                  transforms.CenterCrop(config.resize),]
     trans = transforms.Compose(trans)
     dataset = CIFAR10(root='~/Datasets/CIFAR10', train=is_train,
                       download=True, transform=trans)
@@ -68,7 +73,6 @@ def train(config):
     writer = SummaryWriter(config.summary_writer_dir)
     model = model.to(config.device)
     max_test_acc = 0
-    model.train()
     global_steps = 0
     for epoch in range(config.epochs):
         for i, (x, y) in enumerate(train_iter):
@@ -102,12 +106,14 @@ def evaluate(data_iter, model, device):
             logits = model(x)
             acc_sum += (logits.argmax(1) == y).float().sum().item()
             n += len(y)
+        model.train()
         return acc_sum / n
 
 
 def inference(config, test_iter):
     model = vgg(config)
     model.to(config.device)
+    model.eval()
     if os.path.exists(config.model_save_path):
         logging.info(f" # 载入模型进行推理……")
         checkpoint = torch.load(config.model_save_path)
@@ -124,6 +130,26 @@ def inference(config, test_iter):
 
 if __name__ == '__main__':
     config = ModelConfig()
-    model = train(config)
+    train(config)
     # test_iter = load_dataset(config, is_train=False)
     # inference(config, test_iter)
+    # - INFO: [train.py][87] Epochs[1/15]--batch[0/782]--Acc: 0.0781--loss: 2.3034
+    # - INFO: [train.py][87] Epochs[1/15]--batch[50/782]--Acc: 0.2188--loss: 2.2064
+    # - INFO: [train.py][87] Epochs[1/15]--batch[100/782]--Acc: 0.2656--loss: 1.9216
+    # ...
+    # - INFO: [train.py][92] Epochs[1/15]--Acc on test 0.5977
+    # - INFO: [train.py][92] Epochs[2/15]--Acc on test 0.708
+    # - INFO: [train.py][92] Epochs[3/15]--Acc on test 0.7768
+    # - INFO: [train.py][92] Epochs[4/15]--Acc on test 0.8035
+    # - INFO: [train.py][92] Epochs[5/15]--Acc on test 0.8132
+    # - INFO: [train.py][92] Epochs[6/15]--Acc on test 0.8172
+    # - INFO: [train.py][92] Epochs[7/15]--Acc on test 0.8264
+    # - INFO: [train.py][92] Epochs[8/15]--Acc on test 0.8182
+    # - INFO: [train.py][92] Epochs[9/15]--Acc on test 0.8379
+    # - INFO: [train.py][92] Epochs[10/15]--Acc on test 0.8294
+    # - INFO: [train.py][92] Epochs[11/15]--Acc on test 0.8366
+    # - INFO: [train.py][92] Epochs[12/15]--Acc on test 0.8371
+    # - INFO: [train.py][92] Epochs[13/15]--Acc on test 0.8398
+    # - INFO: [train.py][92] Epochs[14/15]--Acc on test 0.8416
+    # - INFO: [train.py][92] Epochs[15/15]--Acc on test 0.8439
+
