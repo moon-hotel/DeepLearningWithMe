@@ -22,7 +22,7 @@ def logger_init(log_file_name='monitor',
 
     log_path = os.path.join(log_dir, log_file_name + '_' + str(datetime.now())[:10] + '.txt')
     formatter = '[%(asctime)s] - %(levelname)s: [%(filename)s][%(lineno)s] %(message)s'
-    datefmt = "%Y-%d-%m %H:%M:%S'"
+    datefmt = "%Y-%m-%d %H:%M:%S'"
     if only_file:
         logging.basicConfig(filename=log_path, level=log_level, format=formatter, datefmt=datefmt)
     else:
