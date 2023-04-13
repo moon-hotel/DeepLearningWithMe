@@ -25,11 +25,11 @@ from utils import logger_init
 class ModelConfig(object):
     def __init__(self, ):
         self.batch_size = 128
-        self.epochs = 5
-        self.learning_rate = 0.001
+        self.epochs = 60
+        self.learning_rate = 0.0005
         self.in_channels = 3
         self.num_classes = 10
-        self.resize = 224  # 将输入的28*28的图片，resize成224*224的形状
+        self.resize = None
         self.num_classes = 10
         self.init_weights = True
         self.model_save_path = 'nin.pt'
@@ -67,7 +67,6 @@ def train(config):
     writer = SummaryWriter(config.summary_writer_dir)
     model = model.to(config.device)
     max_test_acc = 0
-    model.train()
     global_steps = 0
     for epoch in range(config.epochs):
         for i, (x, y) in enumerate(train_iter):
@@ -101,12 +100,14 @@ def evaluate(data_iter, model, device):
             logits = model(x)
             acc_sum += (logits.argmax(1) == y).float().sum().item()
             n += len(y)
+        model.train()
         return acc_sum / n
 
 
 def inference(config, test_iter):
     model = NIN()
     model.to(config.device)
+    model.eval()
     if os.path.exists(config.model_save_path):
         logging.info(f" # 载入模型进行推理……")
         checkpoint = torch.load(config.model_save_path)
@@ -123,6 +124,6 @@ def inference(config, test_iter):
 
 if __name__ == '__main__':
     config = ModelConfig()
-    model = train(config)
+    train(config)
     # test_iter = load_dataset(config, is_train=False)
     # inference(config, test_iter)
