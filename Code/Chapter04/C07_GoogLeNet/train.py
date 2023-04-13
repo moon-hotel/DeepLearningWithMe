@@ -24,16 +24,15 @@ from utils import logger_init
 
 class ModelConfig(object):
     def __init__(self, ):
-        self.batch_size = 1
-        self.epochs = 5
-        self.learning_rate = 0.001
+        self.batch_size = 64
+        self.epochs = 60
+        self.learning_rate = 0.0003
         self.in_channels = 3
-        self.num_classes = 10
         self.resize = 96
         self.num_classes = 10
-        self.init_weights = True
         self.model_save_path = 'model.pt'
         self.summary_writer_dir = "runs/result"
+        self.augment = True
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         # 判断是否存在GPU设备，其中0表示指定第0块设备
         logger_init(log_file_name='train_log', log_level=logging.INFO, log_dir='log')
@@ -47,6 +46,9 @@ def load_dataset(config, is_train=True):
     if config.resize:  # 将输入的32*32的图片，resize成224*224的形状
         trans.append(transforms.Resize(size=config.resize,
                                        interpolation=InterpolationMode.BILINEAR))
+    if config.augment and is_train:
+        trans += [transforms.RandomHorizontalFlip(0.5),
+                  transforms.CenterCrop(config.resize),]
     trans = transforms.Compose(trans)
     dataset = CIFAR10(root='~/Datasets/CIFAR10', train=is_train,
                       download=True, transform=trans)
@@ -67,7 +69,6 @@ def train(config):
     writer = SummaryWriter(config.summary_writer_dir)
     model = model.to(config.device)
     max_test_acc = 0
-    model.train()
     global_steps = 0
     for epoch in range(config.epochs):
         for i, (x, y) in enumerate(train_iter):
@@ -75,6 +76,7 @@ def train(config):
             loss, logits = model(x, y)
             optimizer.zero_grad()
             loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(),0.5)
             optimizer.step()  # 执行梯度下降
             global_steps += 1
             if i % 50 == 0:
@@ -101,12 +103,14 @@ def evaluate(data_iter, model, device):
             logits = model(x)
             acc_sum += (logits.argmax(1) == y).float().sum().item()
             n += len(y)
+        model.train()
         return acc_sum / n
 
 
 def inference(config, test_iter):
     model = GoogLeNet(config.num_classes,config.in_channels)
     model.to(config.device)
+    model.eval()
     if os.path.exists(config.model_save_path):
         logging.info(f" # 载入模型进行推理……")
         checkpoint = torch.load(config.model_save_path)
