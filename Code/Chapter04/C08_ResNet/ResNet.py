@@ -1,6 +1,9 @@
 """
 文件名: Code/Chapter04/C08_ResNet/ResNet.py
 创建时间: 2023/4/11 8:35 下午
+作 者: @空字符
+公众号: @月来客栈
+知 乎: @月来客栈 https://www.zhihu.com/people/the_lastest
 """
 import torch.nn as nn
 import torch
@@ -37,11 +40,11 @@ class ResNet(nn.Module):
     def __init__(self, in_channels=3, block=None, layers=None, num_classes=1000):
         super().__init__()
         # input shape [1,3,224,224]
-        self.last_layer_channels = 64
-        self.layer0 = nn.Sequential(nn.Conv2d(in_channels, self.last_layer_channels,
+        self.last_res_layer_channels = 64
+        self.layer0 = nn.Sequential(nn.Conv2d(in_channels, self.last_res_layer_channels,
                                               kernel_size=7, stride=2, padding=3, bias=False),
                                     # torch.Size([1, 64, 112, 112])
-                                    nn.BatchNorm2d(self.last_layer_channels),
+                                    nn.BatchNorm2d(self.last_res_layer_channels),
                                     # torch.Size([1, 64, 112, 112])
                                     nn.ReLU(inplace=True),
                                     # torch.Size([1, 64, 112, 112])
@@ -56,7 +59,7 @@ class ResNet(nn.Module):
                                         nn.Flatten(),  # torch.Size([1, 512])
                                         nn.Linear(512, num_classes))  # torch.Size([1, num_classes])
 
-        for m in self.modules():
+        for m in self.modules(): # 重新初始
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(m.weight, mode="fan_out", nonlinearity="relu")
             elif isinstance(m, (nn.BatchNorm2d, nn.GroupNorm)):
@@ -68,12 +71,12 @@ class ResNet(nn.Module):
         downsample = None
         if stride != 1:  # stride = 2
             downsample = nn.Sequential(
-                nn.Conv2d(self.last_layer_channels, channels, 1, stride),
+                nn.Conv2d(self.last_res_layer_channels, channels, 1, stride),
                 nn.BatchNorm2d(channels))
-        layers.append(block(self.last_layer_channels, channels, downsample, stride))
-        self.last_layer_channels = channels
+        layers.append(block(self.last_res_layer_channels, channels, downsample, stride))
+        self.last_res_layer_channels = channels
         for _ in range(1, blocks):
-            layers.append(block(self.last_layer_channels, channels))
+            layers.append(block(self.last_res_layer_channels, channels))
         return nn.Sequential(*layers)
 
     def forward(self, x, labels=None):
