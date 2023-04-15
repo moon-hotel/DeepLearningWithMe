@@ -20,7 +20,6 @@ from ResNet18 import ResNet18
 
 sys.path.append("../../")
 from utils import logger_init
-from utils import get_gpus
 
 
 class ModelConfig(object):

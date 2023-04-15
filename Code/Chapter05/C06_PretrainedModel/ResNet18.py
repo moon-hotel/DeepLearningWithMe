@@ -38,5 +38,5 @@ if __name__ == '__main__':
     x = torch.rand(1, 3, 96, 96)
     out = model(x)
     print(out)
-    for i, param in enumerate(model.resnet18.parameters()):
-        print(f"requires_grad = {param.requires_grad}, i={i + 1}")
+    for (name, param) in model.named_parameters():
+        print(f"name = {name,param.shape} requires_grad = {param.requires_grad}")
