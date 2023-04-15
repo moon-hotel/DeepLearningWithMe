@@ -23,6 +23,7 @@ from utils import logger_init
 from utils import get_gpus
 from Chapter04.C08_ResNet.ResNet import resnet18
 
+
 class ModelConfig(object):
     def __init__(self, ):
         self.batch_size = 128
@@ -35,7 +36,7 @@ class ModelConfig(object):
         self.summary_writer_dir = "runs/result"
         self.augment = True
         self.device = get_gpus(num=2)
-        self.master_gpu_id = 1 # 主GPU
+        self.master_gpu_id = 0  # 主GPU
         # 判断是否存在GPU设备，其中0表示指定第0块设备
         logger_init(log_file_name='train_log', log_level=logging.INFO, log_dir='log')
         logging.info("### 将当前配置打印到日志文件中 ")
@@ -67,7 +68,7 @@ def train(config):
         logging.info(f" # 载入模型{config.model_save_path}进行追加训练...")
         checkpoint = torch.load(config.model_save_path)
         model.load_state_dict(checkpoint)
-    model = model.to(config.device[config.master_gpu_id]) # 指定主GPU
+    model = model.to(config.device[config.master_gpu_id])  # 指定主GPU
     model = nn.DataParallel(model, device_ids=config.device)
     model = nn.parallel.DistributedDataParallel(model, device_ids=config.device)
     optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
@@ -89,7 +90,7 @@ def train(config):
                              f"--Acc: {round(acc.item(), 4)}--loss: {round(loss.sum().item(), 4)}")
                 writer.add_scalar('Training/Accuracy', acc, global_steps)
             writer.add_scalar('Training/Loss', loss.sum().item(), global_steps)
-        test_acc = evaluate(test_iter, model, config.device)
+        test_acc = evaluate(test_iter, model, config.device[config.master_gpu_id])
         logging.info(f"Epochs[{epoch + 1}/{config.epochs}]--Acc on test {test_acc}")
         writer.add_scalar('Testing/Accuracy', test_acc, global_steps)
         if test_acc > max_test_acc:
@@ -103,7 +104,7 @@ def evaluate(data_iter, model, device):
     with torch.no_grad():
         acc_sum, n = 0.0, 0
         for x, y in data_iter:
-            x, y = x.to(config.device[config.master_gpu_id]), y.to(device[config.master_gpu_id])
+            x, y = x.to(device), y.to(device)
             logits = model(x)
             acc_sum += (logits.argmax(1) == y).float().sum().item()
             n += len(y)
