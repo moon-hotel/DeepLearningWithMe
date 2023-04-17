@@ -1,9 +1,10 @@
 """
 文件名: Code/Chapter04/C09_DenseNet/DenseNet.py
 创建时间: 2023/4/15 3:51 下午
+作 者: @空字符
+公众号: @月来客栈
+知 乎: @月来客栈 https://www.zhihu.com/people/the_lastest
 """
-
-from torchvision.models.densenet import densenet121
 import torch.nn as nn
 import torch
 
@@ -112,10 +113,22 @@ class DenseNet(nn.Module):
             elif isinstance(m, nn.Linear):
                 nn.init.constant_(m.bias, 0)
 
-    def forward(self, x):
+    def forward(self, x, labels=None):
         x = self.features(x)
-        out = self.dense_net(x)
-        return out
+        logits = self.dense_net(x)
+        if labels is not None:
+            loss_fct = nn.CrossEntropyLoss(reduction='mean')
+            loss = loss_fct(logits, labels)
+            return loss, logits
+        else:
+            return logits
+
+
+def densenet18(num_classes=10):
+    model = DenseNet(growth_rate=32, block_config=[2, 2, 2, 2],
+                     num_init_features=64, basic_block_coef=4,
+                     drop_rate=0.5, num_classes=num_classes)
+    return model
 
 
 if __name__ == '__main__':
