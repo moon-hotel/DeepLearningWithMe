@@ -70,7 +70,6 @@ def train(config):
         model.load_state_dict(checkpoint)
     model = model.to(config.device[config.master_gpu_id])  # 指定主GPU
     model = nn.DataParallel(model, device_ids=config.device)
-    model = nn.parallel.DistributedDataParallel(model, device_ids=config.device)
     optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
     writer = SummaryWriter(config.summary_writer_dir)
     max_test_acc = 0
@@ -95,7 +94,7 @@ def train(config):
         writer.add_scalar('Testing/Accuracy', test_acc, global_steps)
         if test_acc > max_test_acc:
             max_test_acc = test_acc
-            state_dict = deepcopy(model.state_dict())
+            state_dict = deepcopy(model.module.state_dict())
             torch.save(state_dict, config.model_save_path)
 
 
@@ -132,6 +131,6 @@ def inference(config, test_iter):
 
 if __name__ == '__main__':
     config = ModelConfig()
-    model = train(config)
+    train(config)
     # test_iter = load_dataset(config, is_train=False)
     # inference(config, test_iter)
