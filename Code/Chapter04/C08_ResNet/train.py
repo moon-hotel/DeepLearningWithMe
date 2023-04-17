@@ -128,6 +128,6 @@ def inference(config, test_iter):
 
 if __name__ == '__main__':
     config = ModelConfig()
-    model = train(config)
+    train(config)
     # test_iter = load_dataset(config, is_train=False)
     # inference(config, test_iter)
