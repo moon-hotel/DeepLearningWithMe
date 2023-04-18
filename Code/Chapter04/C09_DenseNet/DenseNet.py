@@ -11,23 +11,23 @@ import torch
 
 class DenseBlock(nn.Module):
     """
-    basic_block_coef: 论文中提及的1x1卷积到3x3卷积的输出通道数，论文里都是4*k即这里的4*growth_rate
+    dense_block_coef: 论文中提及的1x1卷积到3x3卷积的输出通道数，论文里都是4*k即这里的4*growth_rate
     """
 
-    def __init__(self, in_channels, growth_rate, basic_block_coef, drop_rate=0.5):
+    def __init__(self, in_channels, growth_rate, dense_block_coef=4, drop_rate=0.5):
         super().__init__()
         self.block = nn.Sequential(nn.BatchNorm2d(in_channels),
                                    nn.ReLU(inplace=True),
-                                   nn.Conv2d(in_channels, basic_block_coef * growth_rate,
+                                   nn.Conv2d(in_channels, dense_block_coef * growth_rate,
                                              kernel_size=1, stride=1, bias=False),
 
-                                   nn.BatchNorm2d(basic_block_coef * growth_rate),
+                                   nn.BatchNorm2d(dense_block_coef * growth_rate),
                                    nn.ReLU(inplace=True),
-                                   nn.Conv2d(basic_block_coef * growth_rate, growth_rate,
+                                   nn.Conv2d(dense_block_coef * growth_rate, growth_rate,
                                              kernel_size=3, stride=1, padding=1, bias=False),
                                    nn.Dropout(drop_rate))
 
-    def forward(self, input):  # noqa: F811
+    def forward(self, input):
         if isinstance(input, torch.Tensor):
             prev_features = [input]
         else:
@@ -39,43 +39,43 @@ class DenseBlock(nn.Module):
 
 class DenseLayer(nn.Module):
     def __init__(self, num_dense_blocks, in_channels,
-                 basic_block_coef, growth_rate, drop_rate=0.5):
+                 dense_block_coef=4, growth_rate=32, drop_rate=0.5):
         super().__init__()
-        basic_blocks = []
+        dense_blocks = []
         for i in range(num_dense_blocks):
-            basic_blocks.append(DenseBlock(in_channels + i * growth_rate,
+            dense_blocks.append(DenseBlock(in_channels + i * growth_rate,
                                            growth_rate=growth_rate,
-                                           basic_block_coef=basic_block_coef, drop_rate=drop_rate))
-        self.basic_blocks = nn.Sequential(*basic_blocks)
+                                           dense_block_coef=dense_block_coef, drop_rate=drop_rate))
+        self.dense_blocks = nn.Sequential(*dense_blocks)
 
     def forward(self, init_features):
-        for basic_block in self.basic_blocks:
-            out = basic_block(init_features)
+        for dense_block in self.dense_blocks:
+            out = dense_block(init_features)
             init_features = torch.cat((init_features, out), dim=1)
         return init_features
 
 
-class Transition(nn.Module):
+class TransitionLayer(nn.Module):
     """
     高宽通道均减半
     """
 
     def __init__(self, in_channels, out_channels):
         super().__init__()
-        self.transition = nn.Sequential(nn.BatchNorm2d(in_channels),
-                                        nn.ReLU(inplace=True),
-                                        nn.Conv2d(in_channels, out_channels,
-                                                  kernel_size=1, stride=1, bias=False),
-                                        nn.AvgPool2d(kernel_size=2, stride=2))
+        self.transition_layer = nn.Sequential(nn.BatchNorm2d(in_channels),
+                                              nn.ReLU(inplace=True),
+                                              nn.Conv2d(in_channels, out_channels,
+                                                        kernel_size=1, stride=1, bias=False),
+                                              nn.AvgPool2d(kernel_size=2, stride=2))
 
     def forward(self, x):
-        return self.transition(x)
+        return self.transition_layer(x)
 
 
 class DenseNet(nn.Module):
     def __init__(self, growth_rate: int = 32,
                  block_config=None,
-                 num_init_features: int = 64, basic_block_coef=4,
+                 num_init_features: int = 64, dense_block_coef=4,
                  drop_rate=0.5, num_classes=1000):
         super().__init__()
 
@@ -91,11 +91,11 @@ class DenseNet(nn.Module):
         dense_layers = []
         for i, num_dense_blocks in enumerate(block_config):
             dense_layers.append(DenseLayer(num_dense_blocks=num_dense_blocks, in_channels=num_features,
-                                           basic_block_coef=basic_block_coef, growth_rate=growth_rate,
+                                           dense_block_coef=dense_block_coef, growth_rate=growth_rate,
                                            drop_rate=drop_rate))
             num_features = num_features + num_dense_blocks * growth_rate
             if i != len(block_config) - 1:
-                dense_layers.append(Transition(in_channels=num_features, out_channels=int(num_features * 0.5)))
+                dense_layers.append(TransitionLayer(in_channels=num_features, out_channels=int(num_features * 0.5)))
                 num_features = int(num_features * 0.5)  # 0.5是论文中的Compression $\theta$
         self.dense_net = nn.Sequential(*dense_layers,
                                        nn.BatchNorm2d(num_features),  # Final batch norm
@@ -126,24 +126,24 @@ class DenseNet(nn.Module):
 
 def densenet18(num_classes=10):
     model = DenseNet(growth_rate=32, block_config=[2, 2, 2, 2],
-                     num_init_features=64, basic_block_coef=4,
+                     num_init_features=64, dense_block_coef=4,
                      drop_rate=0.5, num_classes=num_classes)
     return model
 
 
 if __name__ == '__main__':
     x = torch.rand(1, 3, 224, 224)
-    # dense_layer = DenseLayer(num_dense_blocks=2, in_channels=3, basic_block_coef=4, growth_rate=16)
+    # dense_layer = DenseLayer(num_dense_blocks=2, in_channels=3, dense_block_coef=4, growth_rate=16)
     # y = dense_layer(x)
     # print(dense_layer)
     # print(y.shape)
     #
-    # transition_layer = Transition(in_channels=35, out_channels=8)
+    # transition_layer = TransitionLayer(in_channels=35, out_channels=8)
     # out_trans = transition_layer(y)
     # print(out_trans.shape)
 
     model = DenseNet(growth_rate=32, block_config=[2, 2, 2, 2],
-                     num_init_features=64, basic_block_coef=4,
+                     num_init_features=64, dense_block_coef=4,
                      drop_rate=0.5, num_classes=1000)
     logits = model(x)
     print(model)
