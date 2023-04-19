@@ -57,7 +57,7 @@ class DenseLayer(nn.Module):
 
 class TransitionLayer(nn.Module):
     """
-    高宽通道均减半
+    压缩高宽通道数
     """
 
     def __init__(self, in_channels, out_channels):
@@ -73,9 +73,8 @@ class TransitionLayer(nn.Module):
 
 
 class DenseNet(nn.Module):
-    def __init__(self, growth_rate: int = 32,
-                 block_config=None,
-                 num_init_features: int = 64, dense_block_coef=4,
+    def __init__(self, growth_rate=32, block_config=None,
+                 num_init_features=64, dense_block_coef=4,
                  drop_rate=0.5, num_classes=1000):
         super().__init__()
 
@@ -95,7 +94,8 @@ class DenseNet(nn.Module):
                                            drop_rate=drop_rate))
             num_features = num_features + num_dense_blocks * growth_rate
             if i != len(block_config) - 1:
-                dense_layers.append(TransitionLayer(in_channels=num_features, out_channels=int(num_features * 0.5)))
+                dense_layers.append(TransitionLayer(in_channels=num_features,
+                                                    out_channels=int(num_features * 0.5)))
                 num_features = int(num_features * 0.5)  # 0.5是论文中的Compression $\theta$
         self.dense_net = nn.Sequential(*dense_layers,
                                        nn.BatchNorm2d(num_features),  # Final batch norm
@@ -124,7 +124,7 @@ class DenseNet(nn.Module):
             return logits
 
 
-def densenet18(num_classes=10):
+def densenet21(num_classes=10):
     model = DenseNet(growth_rate=32, block_config=[2, 2, 2, 2],
                      num_init_features=64, dense_block_coef=4,
                      drop_rate=0.5, num_classes=num_classes)
@@ -133,18 +133,15 @@ def densenet18(num_classes=10):
 
 if __name__ == '__main__':
     x = torch.rand(1, 3, 224, 224)
-    # dense_layer = DenseLayer(num_dense_blocks=2, in_channels=3, dense_block_coef=4, growth_rate=16)
+    # dense_layer = DenseLayer(num_dense_blocks=2, in_channels=3, dense_block_coef=4, growth_rate=32)
     # y = dense_layer(x)
-    # print(dense_layer)
-    # print(y.shape)
-    #
-    # transition_layer = TransitionLayer(in_channels=35, out_channels=8)
-    # out_trans = transition_layer(y)
-    # print(out_trans.shape)
+    # print(y.shape) # torch.Size([1, 67, 224, 224])
 
-    model = DenseNet(growth_rate=32, block_config=[2, 2, 2, 2],
-                     num_init_features=64, dense_block_coef=4,
-                     drop_rate=0.5, num_classes=1000)
+    # transition_layer = TransitionLayer(in_channels=67, out_channels=8)
+    # out_trans = transition_layer(y)
+    # print(out_trans.shape) # torch.Size([1, 8, 112, 112])
+
+    model = densenet21(num_classes=1000)
     logits = model(x)
     print(model)
     print(logits.shape)
