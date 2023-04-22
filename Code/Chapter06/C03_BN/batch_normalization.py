@@ -1,6 +1,9 @@
 """
 文件名: Code/Chapter06/C02_BN/batch_normalization.py
 创建时间: 2023/4/7 2:12 下午
+作 者: @空字符
+公众号: @月来客栈
+知 乎: @月来客栈 https://www.zhihu.com/people/the_lastest
 """
 
 import torch

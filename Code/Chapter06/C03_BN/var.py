@@ -1,6 +1,9 @@
 """
-文件名: Code/Chapter06/C03_GradientClip/main.py
+文件名: Code/Chapter06/C03_BN/var.py
 创建时间: 2023/4/4 3:26 下午
+作 者: @空字符
+公众号: @月来客栈
+知 乎: @月来客栈 https://www.zhihu.com/people/the_lastest
 """
 
 import numpy as np
