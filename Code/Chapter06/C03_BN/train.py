@@ -30,19 +30,22 @@ def train(mnist_train, mnist_test):
     model = LeNet5()
     train_iter = DataLoader(mnist_train, batch_size=batch_size, shuffle=True)
     test_iter = DataLoader(mnist_test, batch_size=batch_size, shuffle=True)
-    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)  # 定义优化器
+    optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)  # 定义优化器
+    losses = []
     for epoch in range(epochs):
         for i, (x, y) in enumerate(train_iter):
             loss, logits = model(x, y)
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()  # 执行梯度下降
+            losses.append(round(loss.item(), 4))
             if i % 50 == 0:
                 acc = (logits.argmax(1) == y).float().mean()
                 print(f"Epochs[{epoch + 1}/{epochs}]--batch[{i}/{len(train_iter)}]"
                       f"--Acc: {round(acc.item(), 4)}--loss: {round(loss.item(), 4)}")
         print(f"Epochs[{epoch + 1}/{epochs}]--Acc on test {evaluate(test_iter, model)}")
         model.train()
+    # print(losses)
     return model
 
 
@@ -93,4 +96,3 @@ if __name__ == '__main__':
 # Epochs[1/3]--batch[850/938]--Acc: 0.9844--loss: 0.0594
 # Epochs[1/3]--batch[900/938]--Acc: 1.0--loss: 0.0322
 # Epochs[1/3]--Acc on test 0.9808
-    torch.nn.utils.clip_grad_norm_()

@@ -25,23 +25,26 @@ def load_dataset():
 
 def train(mnist_train, mnist_test):
     batch_size = 64
-    learning_rate = 0.001
+    learning_rate = 0.01
     epochs = 3
     model = LeNet5()
     train_iter = DataLoader(mnist_train, batch_size=batch_size, shuffle=True)
     test_iter = DataLoader(mnist_test, batch_size=batch_size, shuffle=True)
-    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)  # 定义优化器
+    optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)  # 定义优化器
+    losses = []
     for epoch in range(epochs):
         for i, (x, y) in enumerate(train_iter):
             loss, logits = model(x, y)
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()  # 执行梯度下降
+            losses.append(round(loss.item(), 4))
             if i % 50 == 0:
                 acc = (logits.argmax(1) == y).float().mean()
                 print(f"Epochs[{epoch + 1}/{epochs}]--batch[{i}/{len(train_iter)}]"
                       f"--Acc: {round(acc.item(), 4)}--loss: {round(loss.item(), 4)}")
         print(f"Epochs[{epoch + 1}/{epochs}]--Acc on test {evaluate(test_iter, model)}")
+    print(losses)
     return model
 
 
