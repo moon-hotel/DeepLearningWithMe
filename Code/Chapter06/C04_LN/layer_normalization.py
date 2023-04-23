@@ -69,10 +69,10 @@ if __name__ == '__main__':
     #          [-1.0000, -1.0000,  1.0000,  1.0000]]], grad_fn=<AddBackward0>)
 
     #
-    N, C, H, W = 2, 4, 4, 4
+    N, C, H, W = 2, 3, 5, 5
     embedding = torch.randn(N, C, H, W)
-    layer_norm = nn.LayerNorm([4, 4, 4])
+    layer_norm = nn.LayerNorm([C, H, W])
     print(layer_norm(embedding))
 
-    my_layer_norm = LayerNormalization(C, dim=[1, 2, 3])
+    my_layer_norm = LayerNormalization([C, H, W], dim=[1, 2, 3])
     print(my_layer_norm(embedding))
