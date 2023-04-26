@@ -31,44 +31,54 @@ class LayerNormalization(nn.Module):
     def forward(self, inputs):
         X = inputs
         mean = torch.mean(X, dim=self.dim, keepdim=True)
+        # print(f"mena = {mean}")
         # 在指定的dim上做均值
         var = torch.mean((X - mean) ** 2, dim=self.dim, keepdim=True)
+        # print(f"var = {var}")
         # 在指定的dim上做方差
         X_hat = (X - mean) / torch.sqrt(var + self.eps)
+        # print(f"X_hat = {X_hat}")
         Y = self.gamma * X_hat + self.beta
+        # print(f"self.gamma = {self.gamma.shape}")
         return Y
 
 
 if __name__ == '__main__':
     #
-    batch, sentence_length, embedding_dim = 2, 3, 4
-    embedding = torch.tensor([[[1, 1, 2, 0],
-                               [2, 0, 0, 1],
-                               [0, 0, 1., 0]],
-                              [[1, 1, 2, 0],
-                               [2, 0, 0, 1],
-                               [0, 0, 1, 1]]])
+    batch, sentence_length, embedding_dim = 2, 4, 3
+    embedding = torch.tensor([[[1, 1, 2],
+                               [2, 0, 0],
+                               [0, 0, 1.],
+                               [0, 1, 0]],
+                              [[1, 0, 1],
+                               [1, 1, 2],
+                               [1, 0, 2],
+                               [0, 2, 2]]])
     layer_norm = nn.LayerNorm(embedding_dim)
     my_layer_norm = LayerNormalization(embedding_dim)
     print(layer_norm(embedding))
-    # tensor([[[ 0.0000,  0.0000,  1.4142, -1.4142],
-    #          [ 1.5075, -0.9045, -0.9045,  0.3015],
-    #          [-0.5773, -0.5773,  1.7320, -0.5773]],
+    # tensor([[[-0.7071, -0.7071,  1.4142],
+    #          [ 1.4142, -0.7071, -0.7071],
+    #          [-0.7071, -0.7071,  1.4142],
+    #          [-0.7071,  1.4142, -0.7071]],
     #
-    #         [[ 0.0000,  0.0000,  1.4142, -1.4142],
-    #          [ 1.5075, -0.9045, -0.9045,  0.3015],
-    #          [-1.0000, -1.0000,  1.0000,  1.0000]]],
-    #        grad_fn=<NativeLayerNormBackward0>)
+    #         [[ 0.7071, -1.4142,  0.7071],
+    #          [-0.7071, -0.7071,  1.4142],
+    #          [ 0.0000, -1.2247,  1.2247],
+    #          [-1.4142,  0.7071,  0.7071]]], grad_fn=<NativeLayerNormBackward0>)
     print(my_layer_norm(embedding))
-    # tensor([[[ 0.0000,  0.0000,  1.4142, -1.4142],
-    #          [ 1.5075, -0.9045, -0.9045,  0.3015],
-    #          [-0.5773, -0.5773,  1.7320, -0.5773]],
+    # tensor([[[-0.7071, -0.7071,  1.4142],
+    #          [ 1.4142, -0.7071, -0.7071],
+    #          [-0.7071, -0.7071,  1.4142],
+    #          [-0.7071,  1.4142, -0.7071]],
     #
-    #         [[ 0.0000,  0.0000,  1.4142, -1.4142],
-    #          [ 1.5075, -0.9045, -0.9045,  0.3015],
-    #          [-1.0000, -1.0000,  1.0000,  1.0000]]], grad_fn=<AddBackward0>)
+    #         [[ 0.7071, -1.4142,  0.7071],
+    #          [-0.7071, -0.7071,  1.4142],
+    #          [ 0.0000, -1.2247,  1.2247],
+    #          [-1.4142,  0.7071,  0.7071]]], grad_fn=<AddBackward0>)
 
     #
+    print("IN CNN ===============================")
     N, C, H, W = 2, 3, 5, 5
     embedding = torch.randn(N, C, H, W)
     layer_norm = nn.LayerNorm([C, H, W])
