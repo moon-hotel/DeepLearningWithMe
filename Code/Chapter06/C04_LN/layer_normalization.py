@@ -16,20 +16,18 @@ class LayerNormalization(nn.Module):
                  dim=-1,
                  eps=1e-5):
         """
-        :param normalized_shape:
-        :param dim: 默认-1，即对最后一个维度进行标准化，也可通过list指定相应维度
+        :param normalized_shape: $\gamma$ 和 $\beta$的维度信息
+        :param dim: 默认-1，即对最后一个维度进行标准化，即RNN
+                    也可通过list指定相应维度，例如CNN中
         :param eps:
         """
         super(LayerNormalization, self).__init__()
         self.dim = dim
-        if not isinstance(dim, list):
-            self.dim = [dim]
         self.eps = eps
         self.gamma = nn.Parameter(torch.ones(normalized_shape))
         self.beta = nn.Parameter(torch.zeros(normalized_shape))
 
-    def forward(self, inputs):
-        X = inputs
+    def forward(self, X):
         mean = torch.mean(X, dim=self.dim, keepdim=True)
         # print(f"mena = {mean}")
         # 在指定的dim上做均值
