@@ -119,7 +119,9 @@ def inference(config, test_iter):
 
 if __name__ == '__main__':
     config = ModelConfig()
-    train(config)
+    # train(config)
+    test_iter = load_dataset(config, is_train=False)
+    inference(config, test_iter)
     #  - INFO: [train.py][75] Epochs[1/5]--batch[0/938]--Acc: 0.0156--loss: 2.3238
     #  - INFO: [train.py][75] Epochs[1/5]--batch[50/938]--Acc: 0.4688--loss: 1.1348
     #  - INFO: [train.py][75] Epochs[1/5]--batch[100/938]--Acc: 0.5625--loss: 1.0453
