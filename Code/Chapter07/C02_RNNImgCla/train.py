@@ -1,5 +1,5 @@
 """
-文件名: Code/Chapter07/C01_RNN/train.py
+文件名: Code/Chapter07/C02_RNNImgCla/train.py
 创建时间: 2023/4/27 8:53 下午
 作 者: @空字符
 公众号: @月来客栈
@@ -29,7 +29,7 @@ class ModelConfig(object):
         self.num_classes = 10
         self.num_layers = 2
         self.input_size = 28
-        self.hidden_size = 128
+        self.hidden_size = 256
         self.model_save_path = 'model.pt'
         self.summary_writer_dir = "runs/model"
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -120,3 +120,18 @@ def inference(config, test_iter):
 if __name__ == '__main__':
     config = ModelConfig()
     train(config)
+    #  - INFO: [train.py][75] Epochs[1/5]--batch[0/938]--Acc: 0.0156--loss: 2.3238
+    #  - INFO: [train.py][75] Epochs[1/5]--batch[50/938]--Acc: 0.4688--loss: 1.1348
+    #  - INFO: [train.py][75] Epochs[1/5]--batch[100/938]--Acc: 0.5625--loss: 1.0453
+    #  - INFO: [train.py][75] Epochs[1/5]--batch[150/938]--Acc: 0.7188--loss: 0.8871
+    #  - INFO: [train.py][75] Epochs[1/5]--batch[200/938]--Acc: 0.6406--loss: 1.061
+    #  - INFO: [train.py][75] Epochs[1/5]--batch[250/938]--Acc: 0.7344--loss: 0.7379
+    # ......
+    #  - INFO: [train.py][75] Epochs[5/5]--batch[600/938]--Acc: 0.8906--loss: 0.278
+    #  - INFO: [train.py][75] Epochs[5/5]--batch[650/938]--Acc: 0.8906--loss: 0.2916
+    #  - INFO: [train.py][75] Epochs[5/5]--batch[700/938]--Acc: 0.8438--loss: 0.4513
+    #  - INFO: [train.py][75] Epochs[5/5]--batch[750/938]--Acc: 0.8438--loss: 0.4665
+    #  - INFO: [train.py][75] Epochs[5/5]--batch[800/938]--Acc: 0.8438--loss: 0.4105
+    #  - INFO: [train.py][75] Epochs[5/5]--batch[850/938]--Acc: 0.7969--loss: 0.5822
+    #  - INFO: [train.py][75] Epochs[5/5]--batch[900/938]--Acc: 0.875--loss: 0.3218
+    #  - INFO: [train.py][80] Epochs[5/5]--Acc on test 0.8622
