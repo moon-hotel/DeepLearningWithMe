@@ -13,7 +13,14 @@ import sys
 
 class NewsRNN(nn.Module):
     def __init__(self, input_size=28, hidden_size=128,
-                 num_layers=2, num_classes=10):
+                 num_layers=2, num_classes=15):
+        """
+
+        :param input_size: 此时指代的是词表的长度，因为后续是用one-hot进行编码
+        :param hidden_size:
+        :param num_layers:
+        :param num_classes:
+        """
         super(NewsRNN, self).__init__()
         self.input_size = input_size
         self.rnn = nn.RNN(input_size, hidden_size, nonlinearity='relu',
@@ -25,6 +32,7 @@ class NewsRNN(nn.Module):
 
     def forward(self, x, labels=None):
         x = torch.nn.functional.one_hot(x, self.input_size).type(torch.float32)
+        # x: [batch_size, time_steps]--one_hot--> [batch_size, time_steps, input_size]
         x, _ = self.rnn(x)  # input: [batch_size, time_steps, input_size]
         # x: [batch_size, time_steps, hidden_size]
         logits = self.classifier(x[:, -1].squeeze(1))
