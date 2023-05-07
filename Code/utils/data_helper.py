@@ -11,6 +11,7 @@ from collections import Counter
 import torch
 from tqdm import tqdm
 from torch.utils.data import DataLoader
+import logging
 
 PROJECT_HOME = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_HOME = os.path.join(PROJECT_HOME, 'data')
@@ -25,22 +26,14 @@ class Vocab(object):
     print(vocab.stoi)  # 得到一个字典，返回词表中每个词的索引；
     print(vocab.stoi['[UNK]'])  # 通过单词返回得到词表中对应的索引
     print(len(vocab))  # 返回词表长度
-
     :param top_k:  取出现频率最高的前top_k个token
     :return:
-    以下为以字为粒度构建的词表
-    [['上', '联', '：', '一', '夜', '春', '风', '去', '，', '怎', '么', '对', '下', '联', '？'],
-     ['隋', '唐', '五', '代', '｜', '欧', '阳', '询', '《', '温', '彦', '博', '碑', '》', '，', '书',...]]
-
-
-
-
-    为词为粒度构建的词表与上面类似
     """
     UNK = '[UNK]'  # 0
     PAD = '[PAD]'  # 1
 
     def __init__(self, top_k=2000, data=None):
+        logging.info(f" ## 正在根据训练集构建词表……")
         counter = Counter()
         self.stoi = {Vocab.UNK: 0, Vocab.PAD: 1}
         self.itos = [Vocab.UNK, Vocab.PAD]
@@ -48,10 +41,11 @@ class Vocab(object):
             token = tokenize(text)
             # ['上', '联', '：', '一', '夜', '春', '风', '去', '，', '怎', '么', '对', '下', '联', '？']
             counter.update(token)  # 统计每个token出现的频率
-        top_k_words = counter.most_common(top_k)
+        top_k_words = counter.most_common(top_k - 2)  # 取前top_k - 2 个，加上UNK和PAD，一共top_k个
         for i, word in enumerate(top_k_words):
             self.stoi[word[0]] = i + 2  # 2表示已有了UNK和PAD
             self.itos.append(word[0])
+        logging.debug(f" ## 词表构建完毕，前100个词为: {list(self.stoi.items())[:100]}")
 
     def __getitem__(self, token):
         return self.stoi.get(token, self.stoi.get(Vocab.UNK))
@@ -61,7 +55,13 @@ class Vocab(object):
 
 
 def tokenize(text):
-    words = " ".join(text).split()
+    """
+    tokenize方法
+    :param text:
+    :return:
+    """
+    words = " ".join(text).split()  # 字粒度
+    # TODO:  后续这里需要添加词粒度的tokenize方法
     return words
 
 
@@ -102,7 +102,7 @@ class TouTiaoNews(object):
     """
     头条新闻标题数据集，一共15个类别:
     ['故事','文化','娱乐','体育','财经','房产','汽车','教育','科技','军事','旅游','国际','股票','三农','游戏']
-    训练集:验证集:测试集
+    训练集:验证集:测试集 267881:76537:8270
     """
 
     def __init__(self, top_k=2000,
@@ -112,7 +112,6 @@ class TouTiaoNews(object):
         self.data_path = os.path.join(DATA_HOME, 'toutiao')
         self.top_k = top_k
         self.data_path_train = os.path.join(self.data_path, 'toutiao_train.txt')
-        # self.data_path_train = os.path.join(self.data_path, 'test.txt')
         self.data_path_val = os.path.join(self.data_path, 'toutiao_val.txt')
         self.data_path_test = os.path.join(self.data_path, 'toutiao_test.txt')
         raw_data_train, _ = self.load_raw_data(self.data_path_train)
@@ -130,6 +129,7 @@ class TouTiaoNews(object):
         samples: ['上联：一夜春风去，怎么对下联？', '隋唐五代｜欧阳询《温彦博碑》，书于贞观十一年，是欧最晚的作品']
         labels: ['1','1']
         """
+        logging.info(f" ## 载入原始文本 {file_path.split(os.path.sep)[-1]}")
         samples, labels = [], []
         with open(file_path, encoding='utf-8') as f:
             for line in f:
@@ -140,18 +140,25 @@ class TouTiaoNews(object):
 
     def data_process(self, file_path):
         samples, labels = self.load_raw_data(file_path)
-        print(samples[:10])
         data = []
+        logging.info(f" ## 处理原始文本 {file_path.split(os.path.sep)[-1]}")
         for i in tqdm(range(len(samples)), ncols=80):
+            logging.debug(f" ## 原始输入样本为: {samples[i]}")
             tokens = tokenize(samples[i])
+            logging.debug(f" ## 分割后的样本为: {tokens}")
             token_ids = [self.vocab[token] for token in tokens]
+            logging.debug(f" ## 向量化后样本为: {token_ids}\n")
             token_ids_tensor = torch.tensor(token_ids, dtype=torch.long)
             l = torch.tensor(int(labels[i]), dtype=torch.long)
             data.append((token_ids_tensor, l))
         return data
 
     def generate_batch(self, data_batch):
-
+        """
+        以小批量为单位对序列进行padding
+        :param data_batch:
+        :return:
+        """
         batch_sentence, batch_label = [], []
         for (sen, label) in data_batch:  # 开始对一个batch中的每一个样本进行处理。
             batch_sentence.append(sen)
@@ -164,10 +171,11 @@ class TouTiaoNews(object):
         return batch_sentence, batch_label
 
     def load_train_val_test_data(self, is_train=False):
-        test_data = self.data_process(self.data_path_test)
-        test_iter = DataLoader(test_data, batch_size=self.batch_size,
-                               shuffle=False, collate_fn=self.generate_batch)
         if not is_train:
+            test_data = self.data_process(self.data_path_test)
+            test_iter = DataLoader(test_data, batch_size=self.batch_size,
+                                   shuffle=False, collate_fn=self.generate_batch)
+            logging.info(f" ## 测试集构建完毕，一共{len(test_data)}个样本")
             return test_iter
         train_data = self.data_process(self.data_path_train)  # 得到处理好的所有样本
         val_data = self.data_process(self.data_path_val)
@@ -176,4 +184,5 @@ class TouTiaoNews(object):
                                 collate_fn=self.generate_batch)
         val_iter = DataLoader(val_data, batch_size=self.batch_size,
                               shuffle=False, collate_fn=self.generate_batch)
-        return train_iter, test_iter, val_iter
+        logging.info(f" ## 训练集和验证集构建完毕，样本数量为{len(train_data)}:{len(val_data)}")
+        return train_iter, val_iter

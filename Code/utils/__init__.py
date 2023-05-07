@@ -11,5 +11,6 @@ from .data_helper import TouTiaoNews
 
 __all__ = [
     "logger_init",
-    "get_gpus"
+    "get_gpus",
+    "TouTiaoNews"
 ]
