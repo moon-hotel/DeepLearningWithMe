@@ -8,7 +8,6 @@
 
 import torch
 import torch.nn as nn
-import sys
 
 
 class NewsRNN(nn.Module):
@@ -31,7 +30,7 @@ class NewsRNN(nn.Module):
                                         nn.Linear(hidden_size, num_classes))
 
     def forward(self, x, labels=None):
-        x = torch.nn.functional.one_hot(x, self.input_size).type(torch.float32)
+        x = nn.functional.one_hot(x, self.input_size).type(torch.float32)
         # x: [batch_size, time_steps]--one_hot--> [batch_size, time_steps, input_size]
         x, _ = self.rnn(x)  # input: [batch_size, time_steps, input_size]
         # x: [batch_size, time_steps, hidden_size]
