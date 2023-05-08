@@ -6,9 +6,7 @@
 知 乎: @月来客栈 https://www.zhihu.com/people/the_lastest
 """
 
-from torchvision.datasets import FashionMNIST
-import torchvision.transforms as transforms
-from torch.utils.data import DataLoader
+from transformers import optimization
 from torch.utils.tensorboard import SummaryWriter
 import torch
 from copy import deepcopy
@@ -24,13 +22,15 @@ from utils import TouTiaoNews
 
 class ModelConfig(object):
     def __init__(self):
-        self.batch_size = 64
-        self.epochs = 5
-        self.learning_rate = 0.001
+        self.batch_size = 128
+        self.epochs = 50
+        self.learning_rate = 6e-6
         self.num_classes = 15
         self.num_layers = 2
-        self.top_k = 2000
+        self.top_k = 3000
         self.hidden_size = 512
+        self.clip_max_norm = 0.02
+        self.num_warmup_steps = 100
         self.model_save_path = 'model.pt'
         self.summary_writer_dir = "runs/model"
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -56,13 +56,18 @@ def train(config):
     model = model.to(config.device)
     max_test_acc = 0
     global_steps = 0
+    steps = len(train_iter) * config.epochs
+    scheduler = optimization.get_cosine_schedule_with_warmup(optimizer, num_warmup_steps=config.num_warmup_steps,
+                                                             num_training_steps=steps, num_cycles=2)
     for epoch in range(config.epochs):
         for i, (x, y) in enumerate(train_iter):
             x, y = x.to(config.device), y.to(config.device)
             loss, logits = model(x, y)
             optimizer.zero_grad()
             loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), config.clip_max_norm)
             optimizer.step()  # 执行梯度下降
+            scheduler.step()
             global_steps += 1
             if i % 50 == 0:
                 acc = (logits.argmax(1) == y).float().mean()
@@ -71,7 +76,7 @@ def train(config):
                 writer.add_scalar('Training/Accuracy', acc, global_steps)
             writer.add_scalar('Training/Loss', loss.item(), global_steps)
         test_acc = evaluate(val_iter, model, config.device)
-        logging.info(f"Epochs[{epoch + 1}/{config.epochs}]--Acc on test {test_acc}")
+        logging.info(f"Epochs[{epoch + 1}/{config.epochs}]--Acc on val {test_acc}")
         writer.add_scalar('Testing/Accuracy', test_acc, global_steps)
         if test_acc > max_test_acc:
             max_test_acc = test_acc
@@ -114,6 +119,9 @@ def inference(config, test_iter):
 if __name__ == '__main__':
     config = ModelConfig()
     train(config)
-    # test_iter = load_dataset(config, is_train=False)
-    # inference(config, test_iter)
 
+    #   推理
+    # toutiao_news = TouTiaoNews(top_k=config.top_k,
+    #                            batch_size=config.batch_size)
+    # test_iter = toutiao_news.load_train_val_test_data(is_train=False)
+    # inference(config, test_iter)
