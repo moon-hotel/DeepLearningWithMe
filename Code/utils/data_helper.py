@@ -27,6 +27,7 @@ class Vocab(object):
     print(vocab.stoi['[UNK]'])  # 通过单词返回得到词表中对应的索引
     print(len(vocab))  # 返回词表长度
     :param top_k:  取出现频率最高的前top_k个token
+    :param data: 为一个列表，每个元素为一句文本
     :return:
     """
     UNK = '[UNK]'  # 0
@@ -57,10 +58,12 @@ class Vocab(object):
 def tokenize(text):
     """
     tokenize方法
-    :param text:
+    :param text: 上联：一夜春风去，怎么对下联？
     :return:
+    words: 字粒度： ['上', '联', '：', '一', '夜', '春', '风', '去', '，', '怎', '么', '对', '下', '联', '？']
     """
     words = " ".join(text).split()  # 字粒度
+
     # TODO:  后续这里需要添加词粒度的tokenize方法
     return words
 
