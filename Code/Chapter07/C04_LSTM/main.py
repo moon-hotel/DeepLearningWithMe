@@ -1,5 +1,5 @@
 """
-文件名: gu
+文件名: Code/Chapter07/C04_LSTM/main.py
 创建时间: 2023/5/12 21:48 下午
 作 者: @空字符
 公众号: @月来客栈
@@ -8,7 +8,6 @@
 
 import torch
 import torch.nn as nn
-import numpy as np
 
 torch.manual_seed(5)
 
@@ -24,9 +23,6 @@ def test_LSTM():
     print(output)
     print(hn)
     print(cn)
-
-nn.GRU
-nn.
 
 
 if __name__ == '__main__':
