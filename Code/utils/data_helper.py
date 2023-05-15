@@ -5,7 +5,7 @@
 公众号: @月来客栈
 知 乎: @月来客栈 https://www.zhihu.com/people/the_lastest
 """
-
+import json
 import os
 from collections import Counter
 import torch
@@ -107,17 +107,17 @@ class TouTiaoNews(object):
     ['故事','文化','娱乐','体育','财经','房产','汽车','教育','科技','军事','旅游','国际','股票','三农','游戏']
     训练集:验证集:测试集 267881:76537:8270
     """
+    DATA_DIR = os.path.join(DATA_HOME, 'toutiao')
+    FILE_PATH = [os.path.join(DATA_DIR, 'toutiao_train.txt'),
+                 os.path.join(DATA_DIR, 'toutiao_val.txt'),
+                 os.path.join(DATA_DIR, 'toutiao_test.txt')]
 
     def __init__(self, top_k=2000,
                  max_sen_len=None,
                  batch_size=4,
                  is_sample_shuffle=True):
-        self.data_path = os.path.join(DATA_HOME, 'toutiao')
         self.top_k = top_k
-        self.data_path_train = os.path.join(self.data_path, 'toutiao_train.txt')
-        self.data_path_val = os.path.join(self.data_path, 'toutiao_val.txt')
-        self.data_path_test = os.path.join(self.data_path, 'toutiao_test.txt')
-        raw_data_train, _ = self.load_raw_data(self.data_path_train)
+        raw_data_train, _ = self.load_raw_data(self.FILE_PATH[0])
         self.vocab = Vocab(top_k=self.top_k, data=raw_data_train)
         self.max_sen_len = max_sen_len
         self.batch_size = batch_size
@@ -175,13 +175,13 @@ class TouTiaoNews(object):
 
     def load_train_val_test_data(self, is_train=False):
         if not is_train:
-            test_data = self.data_process(self.data_path_test)
+            test_data = self.data_process(self.FILE_PATH[2])
             test_iter = DataLoader(test_data, batch_size=self.batch_size,
                                    shuffle=False, collate_fn=self.generate_batch)
             logging.info(f" ## 测试集构建完毕，一共{len(test_data)}个样本")
             return test_iter
-        train_data = self.data_process(self.data_path_train)  # 得到处理好的所有样本
-        val_data = self.data_process(self.data_path_val)
+        train_data = self.data_process(self.FILE_PATH[0])  # 得到处理好的所有样本
+        val_data = self.data_process(self.FILE_PATH[1])
         train_iter = DataLoader(train_data, batch_size=self.batch_size,  # 构造DataLoader
                                 shuffle=self.is_sample_shuffle,
                                 collate_fn=self.generate_batch)
@@ -189,3 +189,81 @@ class TouTiaoNews(object):
                               shuffle=False, collate_fn=self.generate_batch)
         logging.info(f" ## 训练集和验证集构建完毕，样本数量为{len(train_data)}:{len(val_data)}")
         return train_iter, val_iter
+
+
+class TangShi(TouTiaoNews):
+    DATA_DIR = os.path.join(DATA_HOME, 'peotry')
+    FILE_PATH = [os.path.join(DATA_DIR, 'tests.json'),
+                 os.path.join(DATA_DIR, 'tests.json'),
+                 os.path.join(DATA_DIR, 'tests.json')]
+
+    def __init__(self, **kwargs):
+        super(TangShi, self).__init__(**kwargs)
+
+    @staticmethod
+    def load_raw_data(file_path=None):
+        logging.info(f" ## 载入原始文本 {file_path.split(os.path.sep)[-1]}")
+        print(f" ## sss载入原始文本 {file_path.split(os.path.sep)[-1]}")
+        samples, labels = [], []
+        with open(file_path, encoding='utf-8') as f:
+            data = json.loads(f.read())
+            # [{'author': '范成大', 'paragraphs': ['日滿東窗照被堆，宿湯猶自暖如煨。', '尺三汗脚君休笑，曾踏鞾霜待漏來。'], 'title': '戲贈脚婆',...},
+            # {'author': '范成大', 'paragraphs': ['雪不成花夜雨來，壠頭一洗定無埃。', '小童却怕溪橋滑，明日先生合探梅。'], 'title': '除夜前二日夜雨', ...},
+            for item in data:
+                content = item['paragraphs']  # ['日滿東窗照被堆，宿湯猶自暖如煨。', '尺三汗脚君休笑，曾踏鞾霜待漏來。']
+                content = "".join(content)  # '日滿東窗照被堆，宿湯猶自暖如煨。尺三汗脚君休笑，曾踏鞾霜待漏來。'
+                samples.append(content)  # ['','日滿東窗照被堆，宿湯猶自暖如煨。', '尺三汗脚君休笑，曾踏鞾霜待漏來。']
+                labels.append(content[1:] + content[-1])  # ['','滿東窗照被堆，宿湯猶自暖如煨。尺三汗脚君休笑，曾踏鞾霜待漏來。。']
+        return samples, labels
+
+    def data_process(self, file_path):
+        samples, labels = self.load_raw_data(file_path)
+        data = []
+        logging.info(f" ## 处理原始文本 {file_path.split(os.path.sep)[-1]}")
+        for i in tqdm(range(len(samples)), ncols=80):
+            logging.debug(f" ## 原始样本为:\n ")
+            logging.debug(f" ## 输入为: {samples[i]}")
+            x_tokens = tokenize(samples[i])
+            logging.debug(f" ## 分割后为: {x_tokens}")
+            x_token_ids = [self.vocab[token] for token in x_tokens]
+            logging.debug(f" ## 向量化后为: {x_token_ids}\n")
+
+            logging.debug(f" ## 标签为: {labels[i]}")
+            y_tokens = tokenize(labels[i])
+            logging.debug(f" ## 分割后为: {y_tokens}")
+            y_token_ids = [self.vocab[token] for token in y_tokens]
+            logging.debug(f" ## 向量化后为: {y_token_ids}\n")
+
+            x_token_ids_tensor = torch.tensor(x_token_ids, dtype=torch.long)
+            y_token_ids_tensor = torch.tensor(y_token_ids, dtype=torch.long)
+            data.append((x_token_ids_tensor, y_token_ids_tensor))
+        return data
+
+    def generate_batch(self, data_batch):
+        """
+        以小批量为单位对序列进行padding
+        :param data_batch:
+        :return:
+        """
+        batch_sentence, batch_label = [], []
+        for (sen, label) in data_batch:  # 开始对一个batch中的每一个样本进行处理。
+            batch_sentence.append(sen)
+            batch_label.append(label)
+        x_batch_sentence = pad_sequence(batch_sentence,  # [batch_size,max_len]
+                                        padding_value=self.vocab.stoi[self.vocab.PAD],
+                                        batch_first=True,
+                                        max_len=self.max_sen_len)
+        y_batch_sentence = pad_sequence(batch_label,  # [batch_size,max_len]
+                                        padding_value=self.vocab.stoi[self.vocab.PAD],
+                                        batch_first=True,
+                                        max_len=self.max_sen_len)
+        return x_batch_sentence, y_batch_sentence
+
+
+if __name__ == '__main__':
+    t = TangShi()
+    test_iter = t.load_train_val_test_data(is_train=False)
+    print(t.vocab.itos)
+    for x,y in test_iter:
+        print(x)
+        print(y)
