@@ -12,6 +12,7 @@ import torch
 from tqdm import tqdm
 from torch.utils.data import DataLoader
 import logging
+import opencc
 
 PROJECT_HOME = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_HOME = os.path.join(PROJECT_HOME, 'data')
@@ -192,29 +193,61 @@ class TouTiaoNews(object):
 
 
 class TangShi(TouTiaoNews):
-    DATA_DIR = os.path.join(DATA_HOME, 'peotry')
-    FILE_PATH = [os.path.join(DATA_DIR, 'tests.json'),
-                 os.path.join(DATA_DIR, 'tests.json'),
-                 os.path.join(DATA_DIR, 'tests.json')]
+    """
+    全唐诗数据集：
+    感谢此仓库收集与整理 https://github.com/chinese-poetry/chinese-poetry
+    此处使用的是全唐诗数据，即poet.tang.0.json~poet.tang.57000.json，58个json文件，一共约5.7万首
 
-    def __init__(self, **kwargs):
-        super(TangShi, self).__init__(**kwargs)
+    """
+    DATA_DIR = os.path.join(DATA_HOME, 'peotry_tang')
+    FILE_PATH = [os.path.join(DATA_DIR, 'poet.tang.0-40.json'),  # 0~40000 for train 样本数量为: 20521
+                 os.path.join(DATA_DIR, 'poet.tang.41-52.json'),  # 41000~52000 for val 样本数量为: 4355
+                 os.path.join(DATA_DIR, 'poet.tang.53-57.json')]  # 53000~57000 for test 样本数量为: 762
 
-    @staticmethod
-    def load_raw_data(file_path=None):
-        logging.info(f" ## 载入原始文本 {file_path.split(os.path.sep)[-1]}")
-        print(f" ## sss载入原始文本 {file_path.split(os.path.sep)[-1]}")
-        samples, labels = [], []
-        with open(file_path, encoding='utf-8') as f:
-            data = json.loads(f.read())
-            # [{'author': '范成大', 'paragraphs': ['日滿東窗照被堆，宿湯猶自暖如煨。', '尺三汗脚君休笑，曾踏鞾霜待漏來。'], 'title': '戲贈脚婆',...},
-            # {'author': '范成大', 'paragraphs': ['雪不成花夜雨來，壠頭一洗定無埃。', '小童却怕溪橋滑，明日先生合探梅。'], 'title': '除夜前二日夜雨', ...},
-            for item in data:
-                content = item['paragraphs']  # ['日滿東窗照被堆，宿湯猶自暖如煨。', '尺三汗脚君休笑，曾踏鞾霜待漏來。']
-                content = "".join(content)  # '日滿東窗照被堆，宿湯猶自暖如煨。尺三汗脚君休笑，曾踏鞾霜待漏來。'
-                samples.append(content)  # ['','日滿東窗照被堆，宿湯猶自暖如煨。', '尺三汗脚君休笑，曾踏鞾霜待漏來。']
-                labels.append(content[1:] + content[-1])  # ['','滿東窗照被堆，宿湯猶自暖如煨。尺三汗脚君休笑，曾踏鞾霜待漏來。。']
-        return samples, labels
+    def __init__(self, *args, **kwargs):
+        super(TangShi, self).__init__(*args, **kwargs)
+
+    def load_raw_data(self, file_path=None):
+
+        def read_json_data(file_path):
+            logging.info(f" ## 载入原始文本 {file_path.split(os.path.sep)[-1]}")
+            print(f" ## 载入原始文本 {file_path.split(os.path.sep)[-1]}")
+            samples, labels = [], []
+            with open(file_path, encoding='utf-8') as f:
+                data = json.loads(f.read())
+                # [{'author': '范成大', 'paragraphs': ['日滿東窗照被堆，宿湯猶自暖如煨。', '尺三汗脚君休笑，曾踏鞾霜待漏來。'], 'title': '戲贈脚婆',...},
+                # {'author': '范成大', 'paragraphs': ['雪不成花夜雨來，壠頭一洗定無埃。', '小童却怕溪橋滑，明日先生合探梅。'], 'title': '除夜前二日夜雨', ...},
+                for item in data:
+                    content = item['paragraphs']  # ['日滿東窗照被堆，宿湯猶自暖如煨。', '尺三汗脚君休笑，曾踏鞾霜待漏來。']
+                    content = "".join(content)  # '日滿東窗照被堆，宿湯猶自暖如煨。尺三汗脚君休笑，曾踏鞾霜待漏來。'
+                    if not skip(content):
+                        samples.append(content)  # ['','日滿東窗照被堆，宿湯猶自暖如煨。', '尺三汗脚君休笑，曾踏鞾霜待漏來。']
+                        labels.append(content[1:] + content[-1])  # ['','滿東窗照被堆，宿湯猶自暖如煨。尺三汗脚君休笑，曾踏鞾霜待漏來。。']
+            return samples, labels
+
+        def skip(content):
+            """
+            过滤掉不需要的诗
+            :param content:
+            :return:
+            """
+            if len(content) % 12 != 0 and len(content) % 14 != 0:  # 五言 或 七言
+                return True
+            if '《' in content or '（' in content or len(content) < 12 or '□' in content \
+                    or len(content) > 100:  # 太长的诗过略
+                return True
+            return False
+
+        file_name = file_path.split(os.path.sep)[-1]
+        start, end = file_name.split('.')[2].split('-')
+        all_samples, all_labels = [], []
+        for i in range(int(start), int(end) + 1):
+            file_path = os.path.join(self.DATA_DIR, f'poet.tang.{i * 1000}.json')
+            samples, labels = read_json_data(file_path)
+            all_samples += samples
+            all_labels += labels
+        logging.info(f" ## {file_name} 样本数量为: {len(all_samples)}")
+        return all_samples, all_labels
 
     def data_process(self, file_path):
         samples, labels = self.load_raw_data(file_path)
@@ -259,11 +292,45 @@ class TangShi(TouTiaoNews):
                                         max_len=self.max_sen_len)
         return x_batch_sentence, y_batch_sentence
 
+    @staticmethod
+    def simplified_traditional_convert(text, type='s2t'):
+        """
+        繁简体相互转换
+        :param text:
+        :param type: t2s 繁体转简体， s2t简体转繁体
+        :return:
+        """
+        if type not in ['t2s', 's2t']:
+            raise ValueError(" ## 转换类型必须为 't2s' or 's2t'")
+        converter = opencc.OpenCC(type + ".json")  # 使用t2s.json配置文件进行繁->简转换
+        converted_text = converter.convert(text)
+        return converted_text
+
+    def make_infer_sample(self, srcs):
+        """
+
+        :param srcs: ["李白乘舟将欲行","朝辞白帝彩"]
+        :return:
+        """
+        all_token_ids = []
+        logging.info(f" ## 构造推理样本")
+        for src in srcs:
+            text = self.simplified_traditional_convert(src, 's2t')
+            tokens = tokenize(text)
+            logging.debug(f" ## 分割后为: {tokens}")
+            token_ids = [self.vocab[token] for token in tokens]
+            logging.info(f" ## 向量化后为: {token_ids}")
+            all_token_ids.append(torch.tensor(token_ids, dtype=torch.long))
+        return all_token_ids
+
 
 if __name__ == '__main__':
     t = TangShi()
-    test_iter = t.load_train_val_test_data(is_train=False)
-    print(t.vocab.itos)
-    for x,y in test_iter:
-        print(x)
-        print(y)
+    test_iter = t.load_train_val_test_data(is_train=True)
+    # print(t.vocab.itos)
+    # for x, y in test_iter:
+    #     print(x.shape)
+    #     print(y.shape)
+    # srcs = ["李白乘舟将欲行", "朝辞白帝彩"]
+    # infer_samples = t.make_infer_sample(srcs)
+    # print(infer_samples)
