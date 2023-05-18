@@ -46,7 +46,7 @@ class CharRNN(nn.Module):
         """
         :param x: [batch_size, src_len]
         :param labels: [batch_size, tgt_len]
-        :return:
+        :return: logits: [batch_size, src_len, vocab_size]
         """
         x = self.token_embedding(x)  # [batch_size, src_len, embedding_size]
         x, _ = self.rnn(x)  # [batch_size, src_len, hidden_size]
