@@ -45,9 +45,9 @@ class ModelConfig(object):
 
 
 def train(config):
-    toutiao_news = TangShi(top_k=config.top_k, max_sen_len=config.max_len,
+    tang_shi = TangShi(top_k=config.top_k, max_sen_len=config.max_len,
                            batch_size=config.batch_size)
-    train_iter, val_iter = toutiao_news.load_train_val_test_data(is_train=True)
+    train_iter, val_iter = tang_shi.load_train_val_test_data(is_train=True)
     model = CharRNN(config.top_k, config.embedding_size, config.hidden_size,
                     config.num_layers, config.cell_type, config.bidirectional)
     if os.path.exists(config.model_save_path):
