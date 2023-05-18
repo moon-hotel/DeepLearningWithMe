@@ -13,6 +13,7 @@ from tqdm import tqdm
 from torch.utils.data import DataLoader
 import logging
 import opencc
+import matplotlib.pyplot as plt
 
 PROJECT_HOME = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_HOME = os.path.join(PROJECT_HOME, 'data')
@@ -34,7 +35,7 @@ class Vocab(object):
     UNK = '[UNK]'  # 0
     PAD = '[PAD]'  # 1
 
-    def __init__(self, top_k=2000, data=None):
+    def __init__(self, top_k=2000, data=None, show_distribution=False):
         logging.info(f" ## 正在根据训练集构建词表……")
         counter = Counter()
         self.stoi = {Vocab.UNK: 0, Vocab.PAD: 1}
@@ -43,11 +44,16 @@ class Vocab(object):
             token = tokenize(text)
             # ['上', '联', '：', '一', '夜', '春', '风', '去', '，', '怎', '么', '对', '下', '联', '？']
             counter.update(token)  # 统计每个token出现的频率
+        if show_distribution:
+            count_w = sorted(list(counter.values()))
+            plt.scatter(range(len(count_w)), count_w[::-1], s=5)
+            plt.ylim(-20, 2500)
+            plt.show()
         top_k_words = counter.most_common(top_k - 2)  # 取前top_k - 2 个，加上UNK和PAD，一共top_k个
         for i, word in enumerate(top_k_words):
             self.stoi[word[0]] = i + 2  # 2表示已有了UNK和PAD
             self.itos.append(word[0])
-        logging.debug(f" ## 词表构建完毕，前100个词为: {list(self.stoi.items())[:100]}")
+        logging.info(f" ## 词表构建完毕，前100个词为: {list(self.stoi.items())[:100]}")
 
     def __getitem__(self, token):
         return self.stoi.get(token, self.stoi.get(Vocab.UNK))
@@ -211,7 +217,6 @@ class TangShi(TouTiaoNews):
 
         def read_json_data(file_path):
             logging.info(f" ## 载入原始文本 {file_path.split(os.path.sep)[-1]}")
-            print(f" ## 载入原始文本 {file_path.split(os.path.sep)[-1]}")
             samples, labels = [], []
             with open(file_path, encoding='utf-8') as f:
                 data = json.loads(f.read())
@@ -222,19 +227,19 @@ class TangShi(TouTiaoNews):
                     content = "".join(content)  # '日滿東窗照被堆，宿湯猶自暖如煨。尺三汗脚君休笑，曾踏鞾霜待漏來。'
                     if not skip(content):
                         samples.append(content)  # ['','日滿東窗照被堆，宿湯猶自暖如煨。', '尺三汗脚君休笑，曾踏鞾霜待漏來。']
-                        labels.append(content[1:] + content[-1])  # ['','滿東窗照被堆，宿湯猶自暖如煨。尺三汗脚君休笑，曾踏鞾霜待漏來。。']
+                        labels.append(content[1:] + content[-1])  # 向左平移 ['','滿東窗照被堆，宿湯猶自暖如煨。尺三汗脚君休笑，曾踏鞾霜待漏來。。']
             return samples, labels
 
         def skip(content):
             """
-            过滤掉不需要的诗
+            过滤掉不需要的诗，里面可能含有一些杂乱的信息
             :param content:
             :return:
             """
             if len(content) % 12 != 0 and len(content) % 14 != 0:  # 五言 或 七言
                 return True
             if '《' in content or '（' in content or len(content) < 12 or '□' in content \
-                    or len(content) > 100:  # 太长的诗过略
+                    or len(content) > 100:  # 太长的诗过滤
                 return True
             return False
 
@@ -242,9 +247,10 @@ class TangShi(TouTiaoNews):
         start, end = file_name.split('.')[2].split('-')
         all_samples, all_labels = [], []
         for i in range(int(start), int(end) + 1):
+            # 按文件名poet.tang.41-52.json中的数字索引构建原始文件的路径
             file_path = os.path.join(self.DATA_DIR, f'poet.tang.{i * 1000}.json')
-            samples, labels = read_json_data(file_path)
-            all_samples += samples
+            samples, labels = read_json_data(file_path)  # 读取每一个原始json文件
+            all_samples += samples  # 累计所有样本
             all_labels += labels
         logging.info(f" ## {file_name} 样本数量为: {len(all_samples)}")
         return all_samples, all_labels
@@ -296,41 +302,30 @@ class TangShi(TouTiaoNews):
     def simplified_traditional_convert(text, type='s2t'):
         """
         繁简体相互转换
+        安装命令： pip install opencc-python-reimplemented
         :param text:
         :param type: t2s 繁体转简体， s2t简体转繁体
         :return:
         """
         if type not in ['t2s', 's2t']:
             raise ValueError(" ## 转换类型必须为 't2s' or 's2t'")
-        converter = opencc.OpenCC(type + ".json")  # 使用t2s.json配置文件进行繁->简转换
+        converter = opencc.OpenCC(type)  # 使用t2s.json配置文件进行繁->简转换
         converted_text = converter.convert(text)
         return converted_text
 
     def make_infer_sample(self, srcs):
         """
-
         :param srcs: ["李白乘舟将欲行","朝辞白帝彩"]
-        :return:
+        :return: [tensor([[767,  32, 388, 214, 113, 108,  34]]), tensor([[ 69, 366,  32, 390, 720]])]
         """
         all_token_ids = []
         logging.info(f" ## 构造推理样本")
         for src in srcs:
             text = self.simplified_traditional_convert(src, 's2t')
             tokens = tokenize(text)
-            logging.debug(f" ## 分割后为: {tokens}")
+            logging.info(f" ## 分割后为: {tokens}")
             token_ids = [self.vocab[token] for token in tokens]
             logging.info(f" ## 向量化后为: {token_ids}")
-            all_token_ids.append(torch.tensor(token_ids, dtype=torch.long))
+            token_ids = torch.tensor(token_ids, dtype=torch.long)
+            all_token_ids.append(torch.reshape(token_ids, [1, -1]))
         return all_token_ids
-
-
-if __name__ == '__main__':
-    t = TangShi()
-    test_iter = t.load_train_val_test_data(is_train=True)
-    # print(t.vocab.itos)
-    # for x, y in test_iter:
-    #     print(x.shape)
-    #     print(y.shape)
-    # srcs = ["李白乘舟将欲行", "朝辞白帝彩"]
-    # infer_samples = t.make_infer_sample(srcs)
-    # print(infer_samples)
