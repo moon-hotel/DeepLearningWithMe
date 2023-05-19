@@ -29,8 +29,12 @@ def greedy_decode(model, src, config):
     src = src.to(config.device)  # 初始时刻的输入形状通常应该是[1,1]，即只有一个字，但是也可以输入一句诗[1,n]
     for i in range(max(max_len) - 1):
         out = model(src)  # [batch_size, src_len, vocab_size]
-        prob = torch.softmax(out[:, -1], dim=-1)  # 计算得到最后一个时刻输出结果的概率分布
-        next_word = torch.distributions.Categorical(prob).sample().item()  # 得到下一个词
+        if config.with_max_prob:
+            _, next_word = torch.max(out[:, -1], dim=1)  # 每次在最后一个时刻的输出结果 中选择概率最大者
+        else:
+            prob = torch.softmax(out[:, -1], dim=-1)  # 计算得到最后一个时刻输出结果的概率分布
+            next_word = torch.distributions.Categorical(prob).sample()  # 根据概率分布采样得到下一个词
+        next_word = next_word.item()
         src = torch.cat([src, torch.ones(1, 1).type_as(src.data).fill_(next_word)], dim=1)
         # 将当前时刻解码的预测输出结果，同之前所有的结果堆叠作为输入再去预测下一个词。
         if (src.shape[1] == min(max_len)):
