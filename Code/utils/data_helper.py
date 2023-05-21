@@ -236,7 +236,8 @@ class TangShi(TouTiaoNews):
             :param content:
             :return:
             """
-            if len(content) % 12 != 0 and len(content) % 14 != 0:  # 五言 或 七言
+            if len(content) % 12 != 0 and len(content) % 10 != 0\
+                    and len(content) % 16 != 0:  # 四言、五言 或 七言
                 return True
             if '《' in content or '（' in content or len(content) < 12 or '□' in content \
                     or len(content) > 100:  # 太长的诗过滤
@@ -247,7 +248,7 @@ class TangShi(TouTiaoNews):
         start, end = file_name.split('.')[2].split('-')
         all_samples, all_labels = [], []
         for i in range(int(start), int(end) + 1):
-            # 按文件名poet.tang.41-52.json中的数字索引构建原始文件的路径
+            # 按文件名中的数字索引构建原始文件的路径
             file_path = os.path.join(self.DATA_DIR, f'poet.tang.{i * 1000}.json')
             samples, labels = read_json_data(file_path)  # 读取每一个原始json文件
             all_samples += samples  # 累计所有样本
