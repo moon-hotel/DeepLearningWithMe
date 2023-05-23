@@ -16,19 +16,19 @@ sys.path.append("../../")
 from utils import TangShi
 
 
-def greedy_decode(model, src, config):
+def greedy_decode(model, src, config, ends):
     """
-
     :param model:
-    :param src: [batch_size, src_len], 已经转换为token_ids
+    :param src: [1, src_len], 已经转换为token_ids
     :param num_sens: 句子数量
     :param config:
+    :param ends: 结束符
     :return:
     """
-    max_len = [12 * config.num_sens, 16 * config.num_sens]  # 五言 或 七言 5*2+2， 7*2+2
+    max_len = [10 * config.num_sens, 12 * config.num_sens, 16 * config.num_sens]  # 四言、五言 或 七言 5*2+2， 7*2+2
     src = src.to(config.device)  # 初始时刻的输入形状通常应该是[1,1]，即只有一个字，但是也可以输入一句诗[1,n]
-    for i in range(max(max_len) - 1):
-        out = model(src)  # [batch_size, src_len, vocab_size]
+    for i in range(max(max_len) * 2):
+        out = model(src)  # [1, src_len, vocab_size]
         if config.with_max_prob:
             _, next_word = torch.max(out[:, -1], dim=1)  # 每次在最后一个时刻的输出结果 中选择概率最大者
         else:
@@ -37,7 +37,7 @@ def greedy_decode(model, src, config):
         next_word = next_word.item()
         src = torch.cat([src, torch.ones(1, 1).type_as(src.data).fill_(next_word)], dim=1)
         # 将当前时刻解码的预测输出结果，同之前所有的结果堆叠作为输入再去预测下一个词。
-        if (src.shape[1] == min(max_len)):
+        if next_word in ends and (src.shape[1] in max_len or src.shape[1] > max(max_len)):
             break
     return src
 
@@ -56,10 +56,11 @@ def inference(config, srcs=None):
         raise ValueError(f" # 模型{config.model_save_path}不存在！")
 
     tang_shi = TangShi(top_k=config.top_k)
+    ends = [tang_shi.vocab.stoi["。"], tang_shi.vocab.stoi["？"]]
     srcs = tang_shi.make_infer_sample(srcs)
     with torch.no_grad():
         for src in srcs:
-            result = greedy_decode(model, src, config)
+            result = greedy_decode(model, src, config, ends=ends)
             result = [tang_shi.vocab.itos[item.item()] for item in result[0]]
             print("".join(result))
 
@@ -67,5 +68,6 @@ def inference(config, srcs=None):
 if __name__ == '__main__':
     config = ModelConfig()
     config.__dict__['num_sens'] = 4
+    config.__dict__['with_max_prob'] = False
     srcs = ["李白乘舟将欲行", "朝辞白帝彩"]
     inference(config, srcs)
