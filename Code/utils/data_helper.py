@@ -228,6 +228,8 @@ class TangShi(TouTiaoNews):
                     if not skip(content):
                         samples.append(content)  # ['','日滿東窗照被堆，宿湯猶自暖如煨。', '尺三汗脚君休笑，曾踏鞾霜待漏來。']
                         labels.append(content[1:] + content[-1])  # 向左平移 ['','滿東窗照被堆，宿湯猶自暖如煨。尺三汗脚君休笑，曾踏鞾霜待漏來。。']
+                    else:
+                        logging.debug(f"过滤古诗：{content}")
             return samples, labels
 
         def skip(content):
@@ -236,7 +238,7 @@ class TangShi(TouTiaoNews):
             :param content:
             :return:
             """
-            if len(content) % 12 != 0 and len(content) % 10 != 0\
+            if len(content) % 10 != 0 and len(content) % 12 != 0\
                     and len(content) % 16 != 0:  # 四言、五言 或 七言
                 return True
             if '《' in content or '（' in content or len(content) < 12 or '□' in content \
@@ -302,7 +304,7 @@ class TangShi(TouTiaoNews):
     @staticmethod
     def simplified_traditional_convert(text, type='s2t'):
         """
-        繁简体相互转换
+        由于原始文本为繁体，所以需要对繁简体相互转换
         安装命令： pip install opencc-python-reimplemented
         :param text:
         :param type: t2s 繁体转简体， s2t简体转繁体
