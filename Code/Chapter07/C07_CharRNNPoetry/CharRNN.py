@@ -1,6 +1,9 @@
 """
 文件名: Code/Chapter07/C07_CharRNNPoetry/CharRNN.py
 创建时间: 2023/5/15 7:29 下午
+作 者: @空字符
+公众号: @月来客栈
+知 乎: @月来客栈 https://www.zhihu.com/people/the_lastest
 """
 
 import torch
@@ -39,7 +42,7 @@ class CharRNN(nn.Module):
                             batch_first=True, bidirectional=self.bidirectional)
         self.classifier = nn.Sequential(nn.LayerNorm(self.hidden_size),
                                         nn.Linear(self.hidden_size, self.hidden_size),
-                                        nn.ReLU(inplace=True),
+                                        nn.ReLU(inplace=True), nn.Dropout(0.5),
                                         nn.Linear(self.hidden_size, self.vocab_size))
 
     def forward(self, x, labels=None):
@@ -51,6 +54,7 @@ class CharRNN(nn.Module):
         x = self.token_embedding(x)  # [batch_size, src_len, embedding_size]
         x, _ = self.rnn(x)  # [batch_size, src_len, hidden_size]
         if self.bidirectional:
+            # x: [batch_size, src_len, 2*hidden_size]
             forward = x[:, :, :self.hidden_size]
             backward = x[:, :, -self.hidden_size:]
             x = 0.5 * (forward + backward)
@@ -69,10 +73,10 @@ if __name__ == '__main__':
     x = torch.randint(0, input_size, [2, 3], dtype=torch.long)
     label = torch.randint(0, input_size, [2, 3], dtype=torch.long)
     loss, logits = model(x, label)
-    # print(loss)
-    # print(logits)
+    print(loss)
+    print(logits)
 
-    out = model(torch.tensor([[5,2]]))
+    # inference
+    out = model(torch.tensor([[5, 2]]))
     print(out)
     print(out.shape)
-
