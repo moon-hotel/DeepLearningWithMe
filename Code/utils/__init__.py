@@ -8,9 +8,11 @@
 from .log_manage import logger_init
 from .tools import get_gpus
 from .data_helper import TouTiaoNews
+from .data_helper import TangShi
 
 __all__ = [
     "logger_init",
     "get_gpus",
-    "TouTiaoNews"
+    "TouTiaoNews",
+    "TangShi"
 ]
