@@ -23,7 +23,7 @@ def greedy_decode(model, src, config, ends):
     :param num_sens: 句子数量
     :param config:
     :param ends: 结束符
-    :return:
+    :return: [1,n]
     """
     max_len = [10 * config.num_sens, 12 * config.num_sens, 16 * config.num_sens]  # 四言、五言 或 七言 5*2+2， 7*2+2
     src = src.to(config.device)  # 初始时刻的输入形状通常应该是[1,1]，即只有一个字，但是也可以输入一句诗[1,n]
@@ -56,13 +56,12 @@ def inference(config, srcs=None):
         raise ValueError(f" # 模型{config.model_save_path}不存在！")
 
     tang_shi = TangShi(top_k=config.top_k)
-    ends = [tang_shi.vocab.stoi["。"], tang_shi.vocab.stoi["？"]]
     srcs = tang_shi.make_infer_sample(srcs)
     with torch.no_grad():
         for src in srcs:
-            result = greedy_decode(model, src, config, ends=ends)
-            result = [tang_shi.vocab.itos[item.item()] for item in result[0]]
-            print("".join(result))
+            result = greedy_decode(model, src, config, ends=tang_shi.ends)
+            result = tang_shi.pretty_print(result)
+            logging.info(result)
 
 
 if __name__ == '__main__':
