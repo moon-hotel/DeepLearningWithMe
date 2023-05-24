@@ -184,7 +184,7 @@ class TouTiaoNews(object):
         if not is_train:
             test_data = self.data_process(self.FILE_PATH[2])
             test_iter = DataLoader(test_data, batch_size=self.batch_size,
-                                   shuffle=False, collate_fn=self.generate_batch)
+                                   shuffle=True, collate_fn=self.generate_batch)
             logging.info(f" ## 测试集构建完毕，一共{len(test_data)}个样本")
             return test_iter
         train_data = self.data_process(self.FILE_PATH[0])  # 得到处理好的所有样本
@@ -340,12 +340,30 @@ class TangShi(TouTiaoNews):
         """
         格式化输出结果
         :param result:  token id , [1,n]
+        result = torch.tensor([[773, 217, 898, 122, 17, 2, 215, 23, 286, 16, 63, 3, 74, 428, 1897, 1112, 58, 2, 21, 15, 493,
+        5, 269, 3, 723, 10, 19, 6, 48, 2, 869, 863, 4, 153, 1605, 3, 16, 46, 556, 25, 219, 1034, 88, 89, 78, 45, 1188, 3]])
         :return:
+        借问陇头水，终年恨何事。
+        深疑呜咽声，中有征人泪。
+        昨日上山下，达曙不能寐。
+        何处接长波？东流入清渭。
         """
         result = [self.vocab.itos[item.item()] for item in result[0]]
         result = "".join(result)
+        result = self.simplified_traditional_convert(result, 't2s')
         seps = [self.vocab.itos[idx] for idx in self.ends]
         for sep in seps:
             result = result.split(sep)
             result = f"{sep}\n".join(result)
-        return result
+        result = result.split('\n')
+        true_result = [result[0]]
+        i = 1
+        while i < len(result) - 1:
+            if len(result[i]) < len(result[i - 1]):
+                true_result.append(result[i] + result[i + 1])
+                i += 2
+            else:
+                true_result.append(result[i])
+                i += 1
+        true_result = "\n".join(true_result)
+        return true_result
