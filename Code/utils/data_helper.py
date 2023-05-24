@@ -206,12 +206,13 @@ class TangShi(TouTiaoNews):
 
     """
     DATA_DIR = os.path.join(DATA_HOME, 'peotry_tang')
-    FILE_PATH = [os.path.join(DATA_DIR, 'poet.tang.0-40.json'),  # 0~40000 for train 样本数量为: 20521
-                 os.path.join(DATA_DIR, 'poet.tang.41-52.json'),  # 41000~52000 for val 样本数量为: 4355
-                 os.path.join(DATA_DIR, 'poet.tang.53-57.json')]  # 53000~57000 for test 样本数量为: 762
+    FILE_PATH = [os.path.join(DATA_DIR, 'poet.tang.0-55.json'),  # 0~55000 for train
+                 os.path.join(DATA_DIR, 'poet.tang.56-56.json'),  # 56000~56000 for val
+                 os.path.join(DATA_DIR, 'poet.tang.57-57.json')]  # 57000~57000 for test
 
     def __init__(self, *args, **kwargs):
         super(TangShi, self).__init__(*args, **kwargs)
+        self.ends = [self.vocab.stoi["。"], self.vocab.stoi["？"]]
 
     def load_raw_data(self, file_path=None):
 
@@ -229,7 +230,7 @@ class TangShi(TouTiaoNews):
                         samples.append(content)  # ['','日滿東窗照被堆，宿湯猶自暖如煨。', '尺三汗脚君休笑，曾踏鞾霜待漏來。']
                         labels.append(content[1:] + content[-1])  # 向左平移 ['','滿東窗照被堆，宿湯猶自暖如煨。尺三汗脚君休笑，曾踏鞾霜待漏來。。']
                     else:
-                        logging.debug(f"过滤古诗：{content}")
+                        logging.debug(f"过滤古诗：len = {len(content)}, {content}")
             return samples, labels
 
         def skip(content):
@@ -238,11 +239,13 @@ class TangShi(TouTiaoNews):
             :param content:
             :return:
             """
-            if len(content) % 10 != 0 and len(content) % 12 != 0\
-                    and len(content) % 16 != 0:  # 四言、五言 或 七言
+            # if len(content) % 10 != 0 and len(content) % 12 != 0\
+            #         and len(content) % 16 != 0:  # 四言、五言 或 七言
+            #     return True
+
+            if len(content) < 12 or len(content) > 100:  # 太长太短的诗过滤
                 return True
-            if '《' in content or '（' in content or len(content) < 12 or '□' in content \
-                    or len(content) > 100:  # 太长的诗过滤
+            if '《' in content or '（' in content or '□' in content or '[' in content:  #
                 return True
             return False
 
@@ -332,3 +335,17 @@ class TangShi(TouTiaoNews):
             token_ids = torch.tensor(token_ids, dtype=torch.long)
             all_token_ids.append(torch.reshape(token_ids, [1, -1]))
         return all_token_ids
+
+    def pretty_print(self, result):
+        """
+        格式化输出结果
+        :param result:  token id , [1,n]
+        :return:
+        """
+        result = [self.vocab.itos[item.item()] for item in result[0]]
+        result = "".join(result)
+        seps = [self.vocab.itos[idx] for idx in self.ends]
+        for sep in seps:
+            result = result.split(sep)
+            result = f"{sep}\n".join(result)
+        return result
