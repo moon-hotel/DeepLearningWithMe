@@ -61,7 +61,7 @@ def inference(config, srcs=None):
         for src in srcs:
             result = greedy_decode(model, src, config, ends=tang_shi.ends)
             result = tang_shi.pretty_print(result)
-            logging.info(result)
+            logging.info(f"\n{result}")
 
 
 if __name__ == '__main__':
