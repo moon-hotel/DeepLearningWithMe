@@ -12,7 +12,7 @@ import torch.nn as nn
 
 class CharRNN(nn.Module):
     def __init__(self, vocab_size=2000, embedding_size=64, hidden_size=128,
-                 num_layers=2, cell_type='LSTM', bidirectional=True, PAD_IDX=1):
+                 num_layers=2, cell_type='LSTM', PAD_IDX=1):
         """
 
         :param vocab_size: 指代的是词表的长度
@@ -20,7 +20,6 @@ class CharRNN(nn.Module):
         :param hidden_size:
         :param num_layers:
         :param cell_type: 'RNN'、'LSTM' 'GRU'
-        :param bidirectional: False or True
         """
         super(CharRNN, self).__init__()
         if cell_type == 'RNN':
@@ -35,11 +34,10 @@ class CharRNN(nn.Module):
         self.hidden_size = hidden_size
         self.embedding_size = embedding_size
         self.num_layers = num_layers
-        self.bidirectional = bidirectional
         self.PAD_IDX = PAD_IDX
         self.token_embedding = nn.Embedding(self.vocab_size, self.embedding_size)
-        self.rnn = rnn_cell(self.embedding_size, self.hidden_size, num_layers=self.num_layers,
-                            batch_first=True, bidirectional=self.bidirectional)
+        self.rnn = rnn_cell(self.embedding_size, self.hidden_size,
+                            num_layers=self.num_layers,batch_first=True)
         self.classifier = nn.Sequential(nn.LayerNorm(self.hidden_size),
                                         nn.Linear(self.hidden_size, self.hidden_size),
                                         nn.ReLU(inplace=True), nn.Dropout(0.5),
@@ -53,11 +51,6 @@ class CharRNN(nn.Module):
         """
         x = self.token_embedding(x)  # [batch_size, src_len, embedding_size]
         x, _ = self.rnn(x)  # [batch_size, src_len, hidden_size]
-        if self.bidirectional:
-            # x: [batch_size, src_len, 2*hidden_size]
-            forward = x[:, :, :self.hidden_size]
-            backward = x[:, :, -self.hidden_size:]
-            x = 0.5 * (forward + backward)
         logits = self.classifier(x)  # [batch_size, src_len, vocab_size]
         if labels is not None:
             loss_fct = nn.CrossEntropyLoss(reduction='mean', ignore_index=self.PAD_IDX)
