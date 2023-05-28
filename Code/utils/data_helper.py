@@ -14,6 +14,7 @@ from torch.utils.data import DataLoader
 import logging
 import opencc
 import matplotlib.pyplot as plt
+import jieba
 
 PROJECT_HOME = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_HOME = os.path.join(PROJECT_HOME, 'data')
@@ -35,13 +36,13 @@ class Vocab(object):
     UNK = '[UNK]'  # 0
     PAD = '[PAD]'  # 1
 
-    def __init__(self, top_k=2000, data=None, show_distribution=False):
+    def __init__(self, top_k=2000, data=None, show_distribution=False, cut_words=False):
         logging.info(f" ## 正在根据训练集构建词表……")
         counter = Counter()
         self.stoi = {Vocab.UNK: 0, Vocab.PAD: 1}
         self.itos = [Vocab.UNK, Vocab.PAD]
         for text in data:
-            token = tokenize(text)
+            token = tokenize(text, cut_words)
             # ['上', '联', '：', '一', '夜', '春', '风', '去', '，', '怎', '么', '对', '下', '联', '？']
             counter.update(token)  # 统计每个token出现的频率
         if show_distribution:
@@ -62,16 +63,16 @@ class Vocab(object):
         return len(self.itos)
 
 
-def tokenize(text):
+def tokenize(text, cut_words=False):
     """
     tokenize方法
     :param text: 上联：一夜春风去，怎么对下联？
     :return:
     words: 字粒度： ['上', '联', '：', '一', '夜', '春', '风', '去', '，', '怎', '么', '对', '下', '联', '？']
     """
-    words = " ".join(text).split()  # 字粒度
-
-    # TODO:  后续这里需要添加词粒度的tokenize方法
+    if cut_words:
+        text = jieba.cut(text)# 词粒度
+    words = " ".join(text).split()
     return words
 
 
@@ -122,10 +123,12 @@ class TouTiaoNews(object):
     def __init__(self, top_k=2000,
                  max_sen_len=None,
                  batch_size=4,
-                 is_sample_shuffle=True):
+                 is_sample_shuffle=True,
+                 cut_words=False):
         self.top_k = top_k
+        self.cut_words = cut_words
         raw_data_train, _ = self.load_raw_data(self.FILE_PATH[0])
-        self.vocab = Vocab(top_k=self.top_k, data=raw_data_train)
+        self.vocab = Vocab(top_k=self.top_k, data=raw_data_train, cut_words=self.cut_words)
         self.max_sen_len = max_sen_len
         self.batch_size = batch_size
         self.is_sample_shuffle = is_sample_shuffle
@@ -154,7 +157,7 @@ class TouTiaoNews(object):
         logging.info(f" ## 处理原始文本 {file_path.split(os.path.sep)[-1]}")
         for i in tqdm(range(len(samples)), ncols=80):
             logging.debug(f" ## 原始输入样本为: {samples[i]}")
-            tokens = tokenize(samples[i])
+            tokens = tokenize(samples[i], self.cut_words)
             logging.debug(f" ## 分割后的样本为: {tokens}")
             token_ids = [self.vocab[token] for token in tokens]
             logging.debug(f" ## 向量化后样本为: {token_ids}\n")
