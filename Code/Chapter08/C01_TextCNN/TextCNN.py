@@ -10,13 +10,12 @@ import torch
 import torch.nn as nn
 
 
-
 class TextCNN(nn.Module):
     def __init__(self, vocab_size=2000, embedding_size=512,
                  window_size=None, out_channels=2, fc_hidden_size=128, num_classes=10):
         super(TextCNN, self).__init__()
         if window_size is None:
-            window_size = [2, 3, 4, 5]
+            window_size = [3, 4, 5]
         self.vocab_size = vocab_size
         self.embedding_size = embedding_size
         self.window_size = window_size
@@ -27,12 +26,10 @@ class TextCNN(nn.Module):
         self.convs = [nn.Conv2d(1, out_channels, kernel_size=(k, embedding_size)) for k in window_size]
         self.max_pool = nn.AdaptiveMaxPool2d((1, 1))
         self.classifier = nn.Sequential(
-            nn.Linear(len(self.window_size) * self.out_channels, self.fc_hidden_size),
-            nn.Linear(self.fc_hidden_size, self.num_classes))
+            nn.Linear(len(self.window_size) * self.out_channels, self.num_classes))
 
     def forward(self, x, labels=None):
         """
-
         :param x: [batch_size, src_len]
         :param labels: [batch_size]
         :return:
@@ -57,6 +54,6 @@ if __name__ == '__main__':
     x = torch.tensor([[1, 2, 3, 2, 0, 1],
                       [2, 2, 2, 1, 3, 1]])
     labels = torch.tensor([0, 3])
-    model = TextCNN(vocab_size=5, embedding_size=3, hidden_size=6)
+    model = TextCNN(vocab_size=5, embedding_size=3, fc_hidden_size=6)
     loss, logits = model(x, labels)
     print(loss, logits)
