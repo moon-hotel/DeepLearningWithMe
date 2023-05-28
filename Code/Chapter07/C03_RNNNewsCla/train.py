@@ -1,6 +1,6 @@
 """
 文件名: Code/Chapter07/C03_RNNNewsCla/train.py
-创建时间: 2023/5/7 12:03 下午
+创建时间: 2023/5/7 11:03 下午
 作 者: @空字符
 公众号: @月来客栈
 知 乎: @月来客栈 https://www.zhihu.com/people/the_lastest
@@ -112,8 +112,8 @@ def inference(config, test_iter):
     with torch.no_grad():
         logits = model(first_batch[0].to(config.device))
     y_pred = logits.argmax(1)
-    print(f"真实标签为：{first_batch[1]}")
-    print(f"预测标签为：{y_pred}")
+    logging.info(f"真实标签为：{first_batch[1]}")
+    logging.info(f"预测标签为：{y_pred}")
 
 
 if __name__ == '__main__':
