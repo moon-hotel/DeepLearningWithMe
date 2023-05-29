@@ -24,16 +24,16 @@ class ModelConfig(object):
     def __init__(self):
         self.batch_size = 128
         self.epochs = 50
-        self.learning_rate = 6e-6
-        self.top_k = 3000  # vocab_size
-        self.embedding_size = 128
+        self.learning_rate = 3e-3
+        self.top_k = 2500  # vocab_size
+        self.embedding_size = 256
         self.hidden_size = 512
-        self.num_layers = 2
+        self.num_layers = 3
         self.cell_type = 'LSTM'
         self.bidirectional = False
         self.max_len = None
-        self.clip_max_norm = 0.02
-        self.num_warmup_steps = 100
+        self.clip_max_norm = 0.8
+        self.num_warmup_steps = 200
         self.model_save_path = 'model.pt'
         self.summary_writer_dir = "runs/model"
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -46,7 +46,7 @@ class ModelConfig(object):
 
 def train(config):
     tang_shi = TangShi(top_k=config.top_k, max_sen_len=config.max_len,
-                           batch_size=config.batch_size)
+                       batch_size=config.batch_size)
     train_iter, val_iter = tang_shi.load_train_val_test_data(is_train=True)
     model = CharRNN(config.top_k, config.embedding_size, config.hidden_size,
                     config.num_layers, config.cell_type, config.bidirectional)
@@ -58,7 +58,6 @@ def train(config):
     writer = SummaryWriter(config.summary_writer_dir)
     model = model.to(config.device)
     max_test_acc = 0
-    global_steps = 0
     steps = len(train_iter) * config.epochs
     scheduler = optimization.get_cosine_schedule_with_warmup(optimizer, num_warmup_steps=config.num_warmup_steps,
                                                              num_training_steps=steps, num_cycles=2)
@@ -71,17 +70,16 @@ def train(config):
             torch.nn.utils.clip_grad_norm_(model.parameters(), config.clip_max_norm)
             optimizer.step()  # 执行梯度下降
             scheduler.step()
-            global_steps += 1
             if i % 50 == 0:
                 acc, _, _ = accuracy(logits, y, 1)
                 logging.info(f"Epochs[{epoch + 1}/{config.epochs}]--batch[{i}/{len(train_iter)}]"
                              f"--Acc: {round(acc, 4)}--loss: {round(loss.item(), 4)}")
-                writer.add_scalar('Training/Accuracy', acc, global_steps)
-            writer.add_scalar('Training/Loss', loss.item(), global_steps)
+                writer.add_scalar('Training/Accuracy', acc, scheduler.last_epoch)
+            writer.add_scalar('Training/Loss', loss.item(), scheduler.last_epoch)
         test_acc = evaluate(val_iter, model, config.device)
         logging.info(f"Epochs[{epoch + 1}/{config.epochs}]--Acc on val {test_acc}")
-        writer.add_scalar('Testing/Accuracy', test_acc, global_steps)
-        if test_acc > max_test_acc:
+        writer.add_scalar('Testing/Accuracy', test_acc, scheduler.last_epoch)
+        if test_acc > max_test_acc: # 因为
             max_test_acc = test_acc
             state_dict = deepcopy(model.state_dict())
             torch.save(state_dict, config.model_save_path)
@@ -121,4 +119,3 @@ def accuracy(logits, y_true, PAD_IDX=1):
 if __name__ == '__main__':
     config = ModelConfig()
     train(config)
-

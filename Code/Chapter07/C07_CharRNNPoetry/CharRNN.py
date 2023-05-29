@@ -40,7 +40,7 @@ class CharRNN(nn.Module):
                             num_layers=self.num_layers,batch_first=True)
         self.classifier = nn.Sequential(nn.LayerNorm(self.hidden_size),
                                         nn.Linear(self.hidden_size, self.hidden_size),
-                                        nn.ReLU(inplace=True), nn.Dropout(0.5),
+                                        nn.ReLU(inplace=True),
                                         nn.Linear(self.hidden_size, self.vocab_size))
 
     def forward(self, x, labels=None):
