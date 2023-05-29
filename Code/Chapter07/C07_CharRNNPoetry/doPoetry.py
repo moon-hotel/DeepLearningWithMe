@@ -34,6 +34,7 @@ def greedy_decode(model, src, config, ends):
         else:
             prob = torch.softmax(out[:, -1], dim=-1)  # 计算得到最后一个时刻输出结果的概率分布
             next_word = torch.distributions.Categorical(prob).sample()  # 根据概率分布采样得到下一个词
+            # TODO: 这里还可以添加一些优化处理，例如预测结果如果是[UNK]或者[PAD]、或者是连续的句号逗号等等则取其它候选值等
         next_word = next_word.item()
         src = torch.cat([src, torch.ones(1, 1).type_as(src.data).fill_(next_word)], dim=1)
         # 将当前时刻解码的预测输出结果，同之前所有的结果堆叠作为输入再去预测下一个词。
