@@ -76,7 +76,8 @@ def train(config):
                              f"--Acc: {round(acc, 4)}--loss: {round(loss.item(), 4)}")
                 writer.add_scalar('Training/Accuracy', acc, scheduler.last_epoch)
             writer.add_scalar('Training/Loss', loss.item(), scheduler.last_epoch)
-        test_acc = evaluate(val_iter, model, config.device)
+        # test_acc = evaluate(val_iter, model, config.device)
+        test_acc = evaluate(train_iter, model, config.device)
         logging.info(f"Epochs[{epoch + 1}/{config.epochs}]--Acc on val {test_acc}")
         writer.add_scalar('Testing/Accuracy', test_acc, scheduler.last_epoch)
         if test_acc > max_test_acc: # 因为
