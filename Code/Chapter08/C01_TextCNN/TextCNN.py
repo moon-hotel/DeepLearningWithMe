@@ -12,7 +12,7 @@ import torch.nn as nn
 
 class TextCNN(nn.Module):
     def __init__(self, vocab_size=2000, embedding_size=512,
-                 window_size=None, out_channels=2, fc_hidden_size=128, num_classes=10):
+                 window_size=None, out_channels=2, num_classes=10):
         super(TextCNN, self).__init__()
         if window_size is None:
             window_size = [3, 4, 5]
@@ -20,10 +20,9 @@ class TextCNN(nn.Module):
         self.embedding_size = embedding_size
         self.window_size = window_size
         self.out_channels = out_channels
-        self.fc_hidden_size = fc_hidden_size
         self.num_classes = num_classes
         self.token_embedding = nn.Embedding(self.vocab_size, self.embedding_size)
-        self.convs = [nn.Conv2d(1, out_channels, kernel_size=(k, embedding_size)) for k in window_size]
+        self.convs = nn.ModuleList([nn.Conv2d(1, out_channels, kernel_size=(k, embedding_size)) for k in window_size])
         self.max_pool = nn.AdaptiveMaxPool2d((1, 1))
         self.classifier = nn.Sequential(
             nn.Linear(len(self.window_size) * self.out_channels, self.num_classes))
