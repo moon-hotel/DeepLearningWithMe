@@ -1,5 +1,5 @@
 """
-文件名: Code/Chapter07/C03_RNNNewsCla/train.py
+文件名: Code/Chapter08/C01_TextCNN/train.py
 创建时间: 2023/5/25 12:03 下午
 作 者: @空字符
 公众号: @月来客栈
@@ -24,14 +24,12 @@ class ModelConfig(object):
     def __init__(self):
         self.batch_size = 128
         self.epochs = 50
-        self.learning_rate = 6e-6
+        self.learning_rate = 5e-3
         self.num_classes = 15
         self.top_k = 3000
-        self.window_size = [2, 3, 4, 5]
-        self.embedding_size = 128
-        self.fc_hidden_size = 512
-        self.out_channels = 2
-        self.clip_max_norm = 0.02
+        self.window_size = [3, 4, 5]
+        self.embedding_size = 256
+        self.out_channels = 3
         self.num_warmup_steps = 100
         self.model_save_path = 'model.pt'
         self.summary_writer_dir = "runs/model"
@@ -45,10 +43,11 @@ class ModelConfig(object):
 
 def train(config):
     toutiao_news = TouTiaoNews(top_k=config.top_k,
-                               batch_size=config.batch_size)
+                               batch_size=config.batch_size,
+                               cut_words=True)
     train_iter, val_iter = toutiao_news.load_train_val_test_data(is_train=True)
     model = TextCNN(config.top_k, config.embedding_size, config.window_size,
-                    config.out_channels, config.fc_hidden_size, config.num_classes)
+                    config.out_channels, config.num_classes)
     if os.path.exists(config.model_save_path):
         logging.info(f" # 载入模型{config.model_save_path}进行追加训练...")
         checkpoint = torch.load(config.model_save_path)
@@ -66,7 +65,6 @@ def train(config):
             loss, logits = model(x, y)
             optimizer.zero_grad()
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(model.parameters(), config.clip_max_norm)
             optimizer.step()  # 执行梯度下降
             scheduler.step()
             if i % 50 == 0:
@@ -99,7 +97,7 @@ def evaluate(data_iter, model, device):
 
 def inference(config, test_iter):
     model = TextCNN(config.top_k, config.embedding_size, config.window_size,
-                    config.out_channels, config.fc_hidden_size, config.num_classes)
+                    config.out_channels, config.num_classes)
     model.to(config.device)
     model.eval()
     if os.path.exists(config.model_save_path):
@@ -121,7 +119,8 @@ if __name__ == '__main__':
     train(config)
 
     #   推理
-    # toutiao_news = TouTiaoNews(top_k=config.top_k,
-    #                            batch_size=config.batch_size)
-    # test_iter = toutiao_news.load_train_val_test_data(is_train=False)
-    # inference(config, test_iter)
+    toutiao_news = TouTiaoNews(top_k=config.top_k,
+                               batch_size=config.batch_size,
+                               cut_words=True)
+    test_iter = toutiao_news.load_train_val_test_data(is_train=False)
+    inference(config, test_iter)
