@@ -22,19 +22,19 @@ from utils import TouTiaoNews
 
 class ModelConfig(object):
     def __init__(self):
-        self.batch_size = 128
+        self.batch_size = 256
         self.epochs = 50
-        self.learning_rate = 6e-6
+        self.learning_rate = 6e-4
         self.num_classes = 15
         self.top_k = 3000
-        self.embedding_size = 128
-        self.hidden_size = 512
-        self.num_layers = 2
+        self.embedding_size = 256
+        self.hidden_size = 256
+        self.num_layers = 1
         self.cell_type = 'LSTM'
-        self.bidirectional = False
+        self.bidirectional = True
         self.cat_type = 'last'
         self.clip_max_norm = 0.02
-        self.num_warmup_steps = 100
+        self.num_warmup_steps = 200
         self.model_save_path = 'model.pt'
         self.summary_writer_dir = "runs/model"
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -46,9 +46,8 @@ class ModelConfig(object):
 
 
 def train(config):
-    toutiao_news = TouTiaoNews(top_k=config.top_k,
-                               batch_size=config.batch_size,
-                               cut_words=True)
+    toutiao_news = TouTiaoNews(top_k=config.top_k,batch_size=config.batch_size,cut_words=False)
+    # 这里采用字粒度比采用词粒度的效果好，前者在头条数据验证集上的准确率大约为0.85，后者只有0.79左右
     train_iter, val_iter = toutiao_news.load_train_val_test_data(is_train=True)
     model = TextRNN(config)
     if os.path.exists(config.model_save_path):
@@ -123,6 +122,7 @@ if __name__ == '__main__':
 
     #   推理
     # toutiao_news = TouTiaoNews(top_k=config.top_k,
-    #                            batch_size=config.batch_size)
+    #                            batch_size=config.batch_size,
+    #                            cut_words=False)
     # test_iter = toutiao_news.load_train_val_test_data(is_train=False)
     # inference(config, test_iter)
