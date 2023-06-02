@@ -4,6 +4,9 @@
 作 者: @空字符
 公众号: @月来客栈
 知 乎: @月来客栈 https://www.zhihu.com/people/the_lastest
+
+Yoon Kim. 2014. Convolutional Neural Networks for Sentence Classification. In Proceedings of the 2014 Conference on Empirical Methods in Natural Language Processing (EMNLP), pages 1746–1751, Doha, Qatar. Association for Computational Linguistics.
+Zhang Y, Wallace B. A sensitivity analysis of (and practitioners' guide to) convolutional neural networks for sentence classification[J]. arXiv preprint arXiv:1510.03820, 2015.
 """
 
 import torch
