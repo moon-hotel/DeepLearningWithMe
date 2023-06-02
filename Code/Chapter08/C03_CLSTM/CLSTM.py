@@ -4,6 +4,8 @@
 作 者: @空字符
 公众号: @月来客栈
 知 乎: @月来客栈 https://www.zhihu.com/people/the_lastest
+
+Zhou C, Sun C, Liu Z, et al. A C-LSTM neural network for text classification[J]. arXiv preprint arXiv:1511.08630, 2015.
 """
 import torch.nn as nn
 import torch
@@ -25,7 +27,7 @@ class CLSTM(nn.Module):
         self.token_embedding = nn.Embedding(config.vocab_size, config.embedding_size)
         self.conv = nn.Conv2d(1, config.out_channels,
                               kernel_size=(config.window_size, config.embedding_size))
-        self.rnn = rnn_cell(config.out_channels, config.hidden_size, num_layers=config.num_layers,
+        self.rnn = rnn_cell(config.out_channels, config.hidden_size, config.num_layers,
                             batch_first=True, bidirectional=config.bidirectional)
         self.classifier = nn.Sequential(nn.Linear(out_hidden_size, config.num_classes))
 
