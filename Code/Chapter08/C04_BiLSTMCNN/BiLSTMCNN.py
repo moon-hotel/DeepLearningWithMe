@@ -36,7 +36,7 @@ class BiLSTMCNN(torch.nn.Module):
         x = x.transpose(1, 2)  # [batch_size, 2, src_len, hidden_size]
         x = self.cnn(x)  # [batch_size, out_channels, src_len - kernel_size + 1, 1]
         x = self.max_pool(x)  # [batch_size, out_channels, 1, 1]
-        x = torch.flatten(x, 1)  # [batch_size, out_channels]
+        x = torch.flatten(x, start_dim=1)  # [batch_size, out_channels]
         logits = self.classifier(x)  # [batch_size, num_classes]
         if labels is not None:
             loss_fct = nn.CrossEntropyLoss(reduction='mean')
