@@ -7,6 +7,9 @@
 """
 
 import torch
+import logging
+import time
+import os
 
 
 def get_gpus(num=None):
@@ -25,3 +28,41 @@ def get_gpus(num=None):
         devices = [torch.device(f'cuda:{i}')
                    for i in range(gpu_nums)][:num]
     return devices if devices else [torch.device('cpu')]
+
+
+def process_cache(*args):
+    """
+    数据预处理结果缓存修饰器
+    :param args:
+    :return:
+    """
+    unique_key = args[0]  # 获取参数索引名称，如 ['top_k', 'cut_words', 'max_sen_len', 'is_sample_shuffle']
+    logging.info(f" ## 索引预处理缓存文件的参数为：{unique_key}")
+
+    def decorating_function(func):
+        def wrapper(*args, **kwargs):
+            obj = args[0]  # 或缺类对象，因为data_process(self, file_path=None)中的第1个参数为self
+            file_path = kwargs['file_path']
+            file_dir = f"{os.sep}".join(file_path.split(os.sep)[:-1])
+            file_name = "".join(file_path.split(os.sep)[-1].split('.')[:-1])
+            paras = f"cache_{file_name}_"
+            for k in unique_key:
+                paras += f"{k}{obj.__dict__[k]}_"  # 遍历对象中的所有参数
+            cache_path = os.path.join(file_dir, paras[:-1] + '.pt')
+            start_time = time.time()
+            if not os.path.exists(cache_path):
+                logging.info(f"缓存文件 {cache_path} 不存在，重新处理并缓存！")
+                data = func(*args, **kwargs)
+                with open(cache_path, 'wb') as f:
+                    torch.save(data, f)
+            else:
+                logging.info(f"缓存文件 {cache_path} 存在，直接载入缓存文件！")
+                with open(cache_path, 'rb') as f:
+                    data = torch.load(f)
+            end_time = time.time()
+            logging.info(f"数据预处理一共耗时{(end_time - start_time):.3f}s")
+            return data
+
+        return wrapper
+
+    return decorating_function

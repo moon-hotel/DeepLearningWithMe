@@ -15,6 +15,7 @@ import logging
 import opencc
 import matplotlib.pyplot as plt
 import jieba
+from .tools import process_cache
 
 PROJECT_HOME = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_HOME = os.path.join(PROJECT_HOME, 'data')
@@ -71,7 +72,7 @@ def tokenize(text, cut_words=False):
     words: 字粒度： ['上', '联', '：', '一', '夜', '春', '风', '去', '，', '怎', '么', '对', '下', '联', '？']
     """
     if cut_words:
-        text = jieba.cut(text)# 词粒度
+        text = jieba.cut(text)  # 词粒度
     words = " ".join(text).split()
     return words
 
@@ -151,7 +152,8 @@ class TouTiaoNews(object):
                 labels.append(line[1])
         return samples, labels
 
-    def data_process(self, file_path):
+    @process_cache(["top_k", "cut_words", "max_sen_len", "is_sample_shuffle"])
+    def data_process(self, file_path=None):
         samples, labels = self.load_raw_data(file_path)
         data = []
         logging.info(f" ## 处理原始文本 {file_path.split(os.path.sep)[-1]}")
@@ -185,13 +187,13 @@ class TouTiaoNews(object):
 
     def load_train_val_test_data(self, is_train=False):
         if not is_train:
-            test_data = self.data_process(self.FILE_PATH[2])
+            test_data = self.data_process(file_path=self.FILE_PATH[2])
             test_iter = DataLoader(test_data, batch_size=self.batch_size,
                                    shuffle=True, collate_fn=self.generate_batch)
             logging.info(f" ## 测试集构建完毕，一共{len(test_data)}个样本")
             return test_iter
-        train_data = self.data_process(self.FILE_PATH[0])  # 得到处理好的所有样本
-        val_data = self.data_process(self.FILE_PATH[1])
+        train_data = self.data_process(file_path=self.FILE_PATH[0])  # 得到处理好的所有样本
+        val_data = self.data_process(file_path=self.FILE_PATH[1])
         train_iter = DataLoader(train_data, batch_size=self.batch_size,  # 构造DataLoader
                                 shuffle=self.is_sample_shuffle,
                                 collate_fn=self.generate_batch)
@@ -264,7 +266,7 @@ class TangShi(TouTiaoNews):
         logging.info(f" ## {file_name} 样本数量为: {len(all_samples)}")
         return all_samples, all_labels
 
-    def data_process(self, file_path):
+    def data_process(self, file_path=None):
         samples, labels = self.load_raw_data(file_path)
         data = []
         logging.info(f" ## 处理原始文本 {file_path.split(os.path.sep)[-1]}")
