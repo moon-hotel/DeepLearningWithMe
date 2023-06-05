@@ -152,7 +152,7 @@ class TouTiaoNews(object):
                 labels.append(line[1])
         return samples, labels
 
-    @process_cache(["top_k", "cut_words", "max_sen_len", "is_sample_shuffle"])
+    @process_cache(unique_key=["top_k", "cut_words", "max_sen_len", "is_sample_shuffle"])
     def data_process(self, file_path=None):
         samples, labels = self.load_raw_data(file_path)
         data = []

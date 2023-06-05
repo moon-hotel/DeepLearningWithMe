@@ -30,17 +30,18 @@ def get_gpus(num=None):
     return devices if devices else [torch.device('cpu')]
 
 
-def process_cache(*args):
+def process_cache(unique_key=None):
     """
     数据预处理结果缓存修饰器
-    :param args:
+    :param : unique_key
     :return:
     """
-    unique_key = args[0]  # 获取参数索引名称，如 ['top_k', 'cut_words', 'max_sen_len', 'is_sample_shuffle']
-    logging.info(f" ## 索引预处理缓存文件的参数为：{unique_key}")
+    if unique_key is None:
+        raise ValueError("unique_key 不能为空, 请指定相关数据集构造类的成员变量，如['top_k', 'cut_words', 'max_sen_len']")
 
     def decorating_function(func):
         def wrapper(*args, **kwargs):
+            logging.info(f" ## 索引预处理缓存文件的参数为：{unique_key}")
             obj = args[0]  # 或缺类对象，因为data_process(self, file_path=None)中的第1个参数为self
             file_path = kwargs['file_path']
             file_dir = f"{os.sep}".join(file_path.split(os.sep)[:-1])
