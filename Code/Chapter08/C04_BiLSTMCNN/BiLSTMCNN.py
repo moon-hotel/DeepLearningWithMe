@@ -1,6 +1,11 @@
 """
 文件名: Code/Chapter08/C04_BiLSTMCNN/BiLSTMCNN.py
 创建时间: 2023/6/3 2:35 下午
+作 者: @空字符
+公众号: @月来客栈
+知 乎: @月来客栈 https://www.zhihu.com/people/the_lastest
+
+Lin S, Xie H, Yu L C, et al. SentiNLP at IJCNLP-2017 Task 4: Customer feedback analysis using a Bi-LSTM-CNN model[C]
 """
 import torch
 import torch.nn as nn
@@ -17,7 +22,7 @@ class BiLSTMCNN(torch.nn.Module):
             rnn_cell = nn.GRU
         else:
             raise ValueError("Unrecognized RNN cell type: " + config.cell_type)
-        self.token_embedding = nn.Embedding(config.top_k, config.embedding_size)
+        self.token_embedding = nn.Embedding(config.vocab_size, config.embedding_size)
         self.rnn = rnn_cell(config.embedding_size, config.hidden_size, config.num_layers,
                             batch_first=True, bidirectional=True)
         self.cnn = nn.Conv2d(2, config.out_channels, [config.kernel_size, config.hidden_size])
@@ -49,7 +54,7 @@ class BiLSTMCNN(torch.nn.Module):
 class ModelConfig(object):
     def __init__(self):
         self.num_classes = 15
-        self.top_k = 8
+        self.vocab_size = 8
         self.embedding_size = 16
         self.hidden_size = 512
         self.num_layers = 2
@@ -63,7 +68,7 @@ if __name__ == '__main__':
     config = ModelConfig()
     model = BiLSTMCNN(config)
 
-    x = torch.randint(0, config.top_k, [2, 3], dtype=torch.long)
+    x = torch.randint(0, config.vocab_size, [2, 3], dtype=torch.long)
     label = torch.randint(0, config.num_classes, [2], dtype=torch.long)
     loss, logits = model(x, label)
     print(loss)
