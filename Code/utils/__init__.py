@@ -9,8 +9,10 @@ from .log_manage import logger_init
 from .tools import get_gpus
 from .data_helper import TouTiaoNews
 from .data_helper import TangShi
+from .data_helper import process_cache
 
 __all__ = [
+    "process_cache",
     "logger_init",
     "get_gpus",
     "TouTiaoNews",

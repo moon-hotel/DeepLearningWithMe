@@ -42,7 +42,7 @@ def process_cache(unique_key=None):
     def decorating_function(func):
         def wrapper(*args, **kwargs):
             logging.info(f" ## 索引预处理缓存文件的参数为：{unique_key}")
-            obj = args[0]  # 或缺类对象，因为data_process(self, file_path=None)中的第1个参数为self
+            obj = args[0]  # 获取类对象，因为data_process(self, file_path=None)中的第1个参数为self
             file_path = kwargs['file_path']
             file_dir = f"{os.sep}".join(file_path.split(os.sep)[:-1])
             file_name = "".join(file_path.split(os.sep)[-1].split('.')[:-1])
