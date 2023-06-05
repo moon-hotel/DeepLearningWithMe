@@ -16,7 +16,6 @@ import os
 from CLSTM import CLSTM
 
 sys.path.append("../../")
-from utils import logger_init
 from utils import TouTiaoNews
 
 
@@ -28,20 +27,18 @@ class ModelConfig(object):
         self.num_classes = 15
         self.vocab_size = 3000
         self.embedding_size = 256
-        self.out_channels = 128 # input_dim
-        self.window_size = 3 # cnn filter size
-        self.hidden_size = 128 # rnn_hidden_size
+        self.out_channels = 256  # input_dim
+        self.window_size = 3  # cnn filter size
+        self.hidden_size = 256  # rnn_hidden_size
         self.num_layers = 1
         self.cell_type = 'LSTM'
-        self.bidirectional = False
+        self.bidirectional = True
         self.cat_type = 'last'
-        self.clip_max_norm = 0.02
         self.num_warmup_steps = 200
         self.model_save_path = 'model.pt'
         self.summary_writer_dir = "runs/model"
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         # 判断是否存在GPU设备，其中0表示指定第0块设备
-        logger_init(log_file_name='log', log_level=logging.INFO, log_dir='log')
         logging.info("### 将当前配置打印到日志文件中 ")
         for key, value in self.__dict__.items():
             logging.info(f"### {key} = {value}")
@@ -50,7 +47,7 @@ class ModelConfig(object):
 def train(config):
     toutiao_news = TouTiaoNews(top_k=config.vocab_size,
                                batch_size=config.batch_size,
-                               cut_words=True)
+                               cut_words=False)
     train_iter, val_iter = toutiao_news.load_train_val_test_data(is_train=True)
     model = CLSTM(config)
     if os.path.exists(config.model_save_path):
@@ -70,7 +67,6 @@ def train(config):
             loss, logits = model(x, y)
             optimizer.zero_grad()
             loss.backward()
-            # torch.nn.utils.clip_grad_norm_(model.parameters(), config.clip_max_norm)
             optimizer.step()  # 执行梯度下降
             scheduler.step()
             if i % 50 == 0:
@@ -126,6 +122,6 @@ if __name__ == '__main__':
     #   推理
     # toutiao_news = TouTiaoNews(top_k=config.vocab_size,
     #                            batch_size=config.batch_size,
-    #                            cut_words=True)
+    #                            cut_words=False)
     # test_iter = toutiao_news.load_train_val_test_data(is_train=False)
     # inference(config, test_iter)
