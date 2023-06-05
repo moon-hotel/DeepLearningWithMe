@@ -18,22 +18,23 @@ from utils import process_cache
 
 
 class LoadData(object):
+    FILE_PATH = './text_train.txt'
+
     def __init__(self):
         self.max_len = 5
         self.batch_size = 2
 
     @process_cache(['max_len'])
     def data_process(self, file_path=None):
-        time.sleep(2)
+        time.sleep(10)
         logging.info("正在进行预处理数据……")
-        self.x = torch.randn((10, 5))
-        self.y = torch.randint(2, [10])
-        data = {"x": self.x, "y": self.y}
+        x = torch.randn((10, 5))
+        y = torch.randint(2, [10])
+        data = {"x": x, "y": y}
         return data
 
     def load_train_val_test_data(self):
-        file_path = './text_train.txt'
-        data = self.data_process(file_path=file_path)
+        data = self.data_process(file_path=self.FILE_PATH)
         x, y = data['x'], data['y']
         data_iter = TensorDataset(x, y)
         data_iter = DataLoader(data_iter, batch_size=self.batch_size)
@@ -41,5 +42,7 @@ class LoadData(object):
 
 
 if __name__ == '__main__':
-    d = LoadData()
-    d.load_train_val_test_data()
+    data = LoadData()
+    data_iter = data.load_train_val_test_data()
+    for x, y in data_iter:
+        print(x.shape, y.shape)
