@@ -47,9 +47,8 @@ def greedy_decode(model, src, config, ends, UNK_IDX):
 
 
 def inference(config, srcs=None):
-    model = CharRNN(config.top_k, config.embedding_size,
-                    config.hidden_size, config.num_layers, config.cell_type,
-                    config.bidirectional)
+    model = CharRNN(config.top_k, config.embedding_size, config.hidden_size,
+                    config.num_layers, config.cell_type, )
     model.to(config.device)
     model.eval()
     if os.path.exists(config.model_save_path):
