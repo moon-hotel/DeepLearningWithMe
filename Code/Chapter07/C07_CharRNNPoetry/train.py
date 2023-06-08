@@ -16,7 +16,6 @@ from transformers import optimization
 from copy import deepcopy
 
 sys.path.append("../../")
-from utils import logger_init
 from utils import TangShi
 
 
@@ -30,7 +29,6 @@ class ModelConfig(object):
         self.hidden_size = 512
         self.num_layers = 3
         self.cell_type = 'LSTM'
-        self.bidirectional = False
         self.max_len = None
         self.clip_max_norm = 0.8
         self.num_warmup_steps = 200
@@ -38,7 +36,6 @@ class ModelConfig(object):
         self.summary_writer_dir = "runs/model"
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         # 判断是否存在GPU设备，其中0表示指定第0块设备
-        logger_init(log_file_name='log', log_level=logging.INFO, log_dir='log')
         logging.info("### 将当前配置打印到日志文件中 ")
         for key, value in self.__dict__.items():
             logging.info(f"### {key} = {value}")
@@ -49,7 +46,7 @@ def train(config):
                        batch_size=config.batch_size)
     train_iter, val_iter = tang_shi.load_train_val_test_data(is_train=True)
     model = CharRNN(config.top_k, config.embedding_size, config.hidden_size,
-                    config.num_layers, config.cell_type, config.bidirectional)
+                    config.num_layers, config.cell_type)
     if os.path.exists(config.model_save_path):
         logging.info(f" # 载入模型{config.model_save_path}进行追加训练...")
         checkpoint = torch.load(config.model_save_path)
