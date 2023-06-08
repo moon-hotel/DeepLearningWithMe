@@ -218,6 +218,7 @@ class TangShi(TouTiaoNews):
     def __init__(self, *args, **kwargs):
         super(TangShi, self).__init__(*args, **kwargs)
         self.ends = [self.vocab.stoi["。"], self.vocab.stoi["？"]]
+        self.cut_words = False
 
     def load_raw_data(self, file_path=None):
 
@@ -266,6 +267,7 @@ class TangShi(TouTiaoNews):
         logging.info(f" ## {file_name} 样本数量为: {len(all_samples)}")
         return all_samples, all_labels
 
+    @process_cache(unique_key=["top_k", "cut_words", "max_sen_len", "is_sample_shuffle"])
     def data_process(self, file_path=None):
         samples, labels = self.load_raw_data(file_path)
         data = []
