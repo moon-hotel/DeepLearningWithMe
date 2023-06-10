@@ -7,14 +7,17 @@
 """
 import json
 import os
-from collections import Counter
 import torch
-from tqdm import tqdm
-from torch.utils.data import DataLoader
 import logging
 import opencc
-import matplotlib.pyplot as plt
 import jieba
+import cv2
+
+from tqdm import tqdm
+import numpy as np
+from torch.utils.data import DataLoader
+from collections import Counter
+import matplotlib.pyplot as plt
 from .tools import process_cache
 
 PROJECT_HOME = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -374,3 +377,119 @@ class TangShi(TouTiaoNews):
                 i += 1
         true_result = "\n".join(true_result)
         return true_result
+
+
+class KTHData(object):
+    DATA_DIR = os.path.join(DATA_HOME, 'kth')
+    CATEGORIES = ["boxing", "handclapping", "handwaving", "jogging", "running", "walking"]
+    TRAIN_PEOPLE_ID = [1, 2, 4, 5, 6, 7, 9, 11, 12, 15, 17, 18, 20, 21, 22, 23, 24]  # 25*0.7 = 17
+    VAL_PEOPLE_ID = [3, 8, 10, 19, 25]  # 25*0.2 = 5
+    TEST_PEOPLE_ID = [13, 14, 16]  # 25*0.1 = 3
+    FILE_PATH = os.path.join(DATA_DIR, 'kth.pt')
+
+    def __init__(self, frame_len=15, batch_size=4, is_sample_shuffle=True):
+        self.frame_len = frame_len  # 即time_step， 每个视频共有555帧，以FRAME_LEN为长度进行分割
+        self.batch_size = batch_size
+        self.is_sample_shuffle = is_sample_shuffle
+
+    @staticmethod
+    def load_avi_frames(self, path=None):
+        """
+        用来读取每一个.avi格式的文件
+        :param self:
+        :param path:
+        :return:
+        """
+        logging.info(f" ## 正在读取原始文件: {path}并划分数据")
+        video = cv2.VideoCapture(path)
+        frames = []
+        while video.isOpened():
+            ret, frame = video.read()
+            if not ret:  # ret是一个布尔值，表示是否成功读取帧图像的数据，frame是读取到的帧图像数据。
+                break
+            frames.append(frame)
+        return np.array(frames)
+
+    @process_cache(unique_key=["frame_len"])
+    def data_process(self, file_path=None):
+        train_data, val_data, test_data = [], [], []
+        for label, dir_name in enumerate(self.CATEGORIES):  # 遍历每个文件夹
+            video_dir = os.path.join(self.DATA_DIR, dir_name)  # 构造每个文件夹的路径
+            video_names = os.listdir(video_dir)  # 列出当前文件夹的所有文件
+            for name in video_names:  # 遍历当前文件夹中的每个视频
+                people_id = int(name[6:8])  # 取人员编号
+                video_ptah = os.path.join(video_dir, name)  # 得到文件的绝对路径
+                frames = self.load_avi_frames(video_ptah)  # 读取该文件
+                s_idx, e_idx = 0, self.frame_len
+                while e_idx <= len(frames):  # 开始采样样本
+                    logging.info(f" ## 截取帧子序列 [{s_idx}:{e_idx}]")
+                    sub_frames = torch.tensor(frames[s_idx:e_idx])  # [frame_len, 120, 160, 3]
+                    label = torch.tensor(label, dtype=torch.long)
+                    if people_id in self.TRAIN_PEOPLE_ID:
+                        train_data.append((sub_frames, label))
+                    elif people_id in self.VAL_PEOPLE_ID:
+                        val_data.append((sub_frames, label))
+                    elif people_id in self.TEST_PEOPLE_ID:
+                        test_data.append((sub_frames, label))
+                    else:
+                        raise ValueError(f"people id {people_id} 有误")
+                    s_idx, e_idx = e_idx, e_idx + self.frame_len
+        logging.info(f" ## 原始数据划分完毕，训练集、验证集和测试集的数量分别为: "
+                     f"{len(train_data)}-{len(val_data)}-{len(test_data)}")
+        data = {"train_data": train_data, "val_data": val_data, "test_data": test_data}
+        return data
+
+    def generate_batch(self, data_batch):
+        """
+        :param data_batch:
+        :return:
+        """
+
+        batch_frames, batch_label = [], []
+        for (frames, label) in data_batch:  # 开始对一个batch中的每一个样本进行处理。
+            batch_frames.append(frames.permute(0, 3, 1, 2))  # [[frame_len, channels, height, width], [], []]
+            batch_label.append(label)
+        batch_frames = torch.stack(batch_frames, dim=0)  # [batch_size, frame_len, channels, height, width]
+        batch_label = torch.tensor(batch_label, dtype=torch.long)
+        return batch_frames, batch_label
+
+    def load_train_val_test_data(self, is_train=False):
+        print(self.__dict__)
+        data = self.data_process(file_path=self.FILE_PATH)
+        if not is_train:
+            test_data = data['test_data']
+            test_iter = DataLoader(test_data, batch_size=self.batch_size,
+                                   shuffle=True, collate_fn=self.generate_batch)
+            logging.info(f" ## 测试集构建完毕，一共{len(test_data)}个样本")
+            return test_iter
+        train_data, val_data = data['train_data'], data['val_data']
+        train_iter = DataLoader(train_data, batch_size=self.batch_size,  # 构造DataLoader
+                                shuffle=self.is_sample_shuffle,
+                                collate_fn=self.generate_batch)
+        val_iter = DataLoader(val_data, batch_size=self.batch_size,
+                              shuffle=False, collate_fn=self.generate_batch)
+        logging.info(f" ## 训练集和验证集构建完毕，样本数量为{len(train_data)}:{len(val_data)}")
+        return train_iter, val_iter
+
+    def show_example(self, file_path=None, row=3, col=5, begin_id=10):
+        """
+        可视化
+        :param file_path:
+        :param row:
+        :param col:
+        :param begin_id:
+        :return:
+        """
+        import matplotlib.pyplot as plt
+        if file_path is None:
+            file_path = os.path.join(self.DATA_DIR, self.CATEGORIES[0])
+            file_path = os.path.join(file_path, 'person01_boxing_d1_uncomp.avi')
+        frames = self.load_avi_frames(file_path)
+        fig, ax = plt.subplots(row, col)
+        for i, axi in enumerate(ax.flat):  # , figsize=(18, 10)
+            image = frames[i + begin_id]
+            axi.set_xlabel(f'Frame{i + begin_id}')
+            axi.imshow(image)
+            axi.set(xticks=[], yticks=[])
+        plt.tight_layout()
+        plt.show()

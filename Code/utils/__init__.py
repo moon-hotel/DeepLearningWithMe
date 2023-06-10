@@ -10,11 +10,13 @@ from .tools import get_gpus
 from .data_helper import TouTiaoNews
 from .data_helper import TangShi
 from .data_helper import process_cache
+from .data_helper import KTHData
 
 __all__ = [
     "process_cache",
     "logger_init",
     "get_gpus",
     "TouTiaoNews",
-    "TangShi"
+    "TangShi",
+    "KTHData"
 ]
