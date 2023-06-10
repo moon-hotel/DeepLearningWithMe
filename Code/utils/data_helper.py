@@ -380,6 +380,9 @@ class TangShi(TouTiaoNews):
 
 
 class KTHData(object):
+    """
+    载入KTH数据集，下载地址：https://www.csc.kth.se/cvap/actions/ 一共包含6个zip压缩包
+    """
     DATA_DIR = os.path.join(DATA_HOME, 'kth')
     CATEGORIES = ["boxing", "handclapping", "handwaving", "jogging", "running", "walking"]
     TRAIN_PEOPLE_ID = [1, 2, 4, 5, 6, 7, 9, 11, 12, 15, 17, 18, 20, 21, 22, 23, 24]  # 25*0.7 = 17
@@ -442,7 +445,9 @@ class KTHData(object):
     def generate_batch(self, data_batch):
         """
         :param data_batch:
-        :return:
+        :return: 每个batch的形状
+                 [batch_size, frame_len, channels, height, width]
+                 [batch_size, ]
         """
 
         batch_frames, batch_label = [], []
