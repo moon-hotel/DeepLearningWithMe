@@ -95,12 +95,18 @@ class ConvLSTM(nn.Module):
         A tensor of size B, T, C, H, W or T, B, C, H, W
         [Batch_size, Time_step, Channels, Height, Width]  or [Time_step, Batch_size, Channels, Height, Width]
     Output:
+        当return_all_layers 为 True 时：
         layer_output_list: 每一层的输出结果，包含有num_layer个元素的列表，
                            每个元素的形状为[batch_size, time_step, out_channels, height, width]
         last_states: 每一层最后一个时刻的输出结果，同样是包含有num_layer个元素的列表，
                      列表中的每个元素均为一个包含有两个张量的列表，
                      如last_states[-1][0]和last_states[-1][1]分别表示最后一层最后一个时刻的h和c
                      layer_output_list[-1][:, -1] == last_states[-1][0]
+                     shape:  [Batch_size, Channels, Height, Width]
+
+        当return_all_layers 为 False 时：
+        layer_output_list: 最后一层每个时刻的输出，形状为 [batch_size, time_step, out_channels, height, width]
+        last_states: 最后一层最后一个时刻的输出，形状为 [batch_size, out_channels, height, width]
 
     Example:
         >> model = ConvLSTM(in_channels=3,
@@ -223,3 +229,60 @@ class ConvLSTM(nn.Module):
         if not isinstance(param, list):
             param = [param] * num_layers
         return param
+
+
+class ConvLSTMKTH(nn.Module):
+    def __init__(self, config=None):
+        super().__init__()
+        self.conv_lstm = ConvLSTM(config.in_channels, config.out_channels,
+                                  config.kernel_size, config.num_layers, config.batch_first)
+        self.max_pool = nn.MaxPool2d(kernel_size=(5, 5), stride=2, padding=2)
+        self.hidden_dim = (config.width * config.height) // 4 * self.conv_lstm.out_channels[-1]
+        # 除以4是因为长宽均要除以stride, 使用self.conv_lstm.out_channels[-1]
+        # 主要是为了兼容out_channels传入整型或列表的情况，因为传入整型的话在ConvLSTM的初始化方法中_extend_for_multilayer()
+        # 方法也会将其扩充一个list
+        self.classifier = nn.Sequential(nn.Flatten(),
+                                        nn.Linear(self.hidden_dim, config.num_classes))
+
+    def forward(self, x, labels=None):
+        """
+        :param x: [batch_size, time_step, channels, height, width]
+        :param labels: [batch_size,]
+        :return: logits: [batch_size, num_classes]
+        """
+        _, layer_output = self.conv_lstm(x)
+        # layer_output: [h:[batch_size, out_channels, height, width], c:[batch_size, out_channels, height, width]]
+        pool_output = self.max_pool(layer_output[-1][0])  # [batch_size, out_channels, height//2, width//2]
+        logits = self.classifier(pool_output)  # [batch_size, num_classes]
+        if labels is not None:
+            loss_fct = nn.CrossEntropyLoss(reduction='mean')
+            loss = loss_fct(logits, labels)
+            return loss, logits
+        else:
+            return logits
+
+
+class ModelConfig(object):
+    def __init__(self):
+        self.num_classes = 6
+        self.in_channels = 3
+        self.out_channels = [32, 16, 8]
+        self.kernel_size = [(3, 3), (5, 5), (7, 7)]
+        self.num_layers = len(self.out_channels)
+        self.batch_size = 8
+        self.height = 120
+        self.width = 160
+        self.batch_first = True
+        self.time_step = 15
+
+
+if __name__ == '__main__':
+    config = ModelConfig()
+    model = ConvLSTMKTH(config)
+    x = torch.randn([config.batch_size, config.time_step,
+                     config.in_channels, config.height,
+                     config.width])  # [batch_size, time_step, channels, height, width]
+    label = torch.randint(0, config.num_classes, [config.batch_size], dtype=torch.long)
+    loss, logits = model(x, label)
+    print(loss)
+    print(logits)
