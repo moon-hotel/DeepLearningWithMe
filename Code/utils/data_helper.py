@@ -391,7 +391,7 @@ class KTHData(object):
     FILE_PATH = os.path.join(DATA_DIR, 'kth.pt')
 
     def __init__(self, frame_len=15, batch_size=4, is_sample_shuffle=True):
-        self.frame_len = frame_len  # 即time_step， 每个视频共有555帧，以FRAME_LEN为长度进行分割
+        self.frame_len = frame_len  # 即time_step， 以FRAME_LEN为长度进行分割
         self.batch_size = batch_size
         self.is_sample_shuffle = is_sample_shuffle
 
@@ -411,6 +411,7 @@ class KTHData(object):
             if not ret:  # ret是一个布尔值，表示是否成功读取帧图像的数据，frame是读取到的帧图像数据。
                 break
             frames.append(frame)
+        logging.info(f" ## 该视频一共有{len(frames)}帧")
         return np.array(frames)
 
     @process_cache(unique_key=["frame_len"])
