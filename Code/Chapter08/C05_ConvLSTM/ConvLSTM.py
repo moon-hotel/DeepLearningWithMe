@@ -144,7 +144,7 @@ class ConvLSTM(nn.Module):
         self.return_all_layers = return_all_layers
 
         cell_list = []
-        for i in range(0, self.num_layers):  # 实例化每一层的ConvLSTM记忆单一
+        for i in range(0, self.num_layers):  # 实例化每一层的ConvLSTM记忆单
             cur_in_channels = self.in_channels if i == 0 else self.out_channels[i - 1]
             # 当前层的输入通道数，除了第一层为self.in_channels之外，其它的均为上一层的输出通道数
 
