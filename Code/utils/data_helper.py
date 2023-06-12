@@ -396,10 +396,9 @@ class KTHData(object):
         self.is_sample_shuffle = is_sample_shuffle
 
     @staticmethod
-    def load_avi_frames(self, path=None):
+    def load_avi_frames(path=None):
         """
         用来读取每一个.avi格式的文件
-        :param self:
         :param path:
         :return:
         """
@@ -422,8 +421,8 @@ class KTHData(object):
             video_names = os.listdir(video_dir)  # 列出当前文件夹的所有文件
             for name in video_names:  # 遍历当前文件夹中的每个视频
                 people_id = int(name[6:8])  # 取人员编号
-                video_ptah = os.path.join(video_dir, name)  # 得到文件的绝对路径
-                frames = self.load_avi_frames(video_ptah)  # 读取该文件
+                video_path = os.path.join(video_dir, name)  # 得到文件的绝对路径
+                frames = self.load_avi_frames(video_path)  # 读取该文件
                 s_idx, e_idx = 0, self.frame_len
                 while e_idx <= len(frames):  # 开始采样样本
                     logging.info(f" ## 截取帧子序列 [{s_idx}:{e_idx}]")
