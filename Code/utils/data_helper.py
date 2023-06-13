@@ -459,7 +459,6 @@ class KTHData(object):
         return batch_frames, batch_label
 
     def load_train_val_test_data(self, is_train=False):
-        print(self.__dict__)
         data = self.data_process(file_path=self.FILE_PATH)
         if not is_train:
             test_data = data['test_data']
