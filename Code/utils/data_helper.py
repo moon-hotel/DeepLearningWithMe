@@ -15,6 +15,7 @@ import cv2
 
 from tqdm import tqdm
 import numpy as np
+from PIL import Image
 from torch.utils.data import DataLoader
 from collections import Counter
 import matplotlib.pyplot as plt
@@ -384,19 +385,26 @@ class KTHData(object):
     载入KTH数据集，下载地址：https://www.csc.kth.se/cvap/actions/ 一共包含6个zip压缩包
     """
     DATA_DIR = os.path.join(DATA_HOME, 'kth')
-    CATEGORIES = ["boxing", "handclapping", "handwaving", "jogging", "running", "walking"]
+    # CATEGORIES = ["boxing", "handclapping", "handwaving", "jogging", "running", "walking"]
+    CATEGORIES = ["boxing"]
     TRAIN_PEOPLE_ID = [1, 2, 4, 5, 6, 7, 9, 11, 12, 15, 17, 18, 20, 21, 22, 23, 24]  # 25*0.7 = 17
     VAL_PEOPLE_ID = [3, 8, 10, 19, 25]  # 25*0.2 = 5
     TEST_PEOPLE_ID = [13, 14, 16]  # 25*0.1 = 3
     FILE_PATH = os.path.join(DATA_DIR, 'kth.pt')
 
-    def __init__(self, frame_len=15, batch_size=4, is_sample_shuffle=True):
+    def __init__(self, frame_len=15,
+                 batch_size=4,
+                 is_sample_shuffle=True,
+                 is_gray=True,
+                 transforms=None):
         self.frame_len = frame_len  # 即time_step， 以FRAME_LEN为长度进行分割
         self.batch_size = batch_size
         self.is_sample_shuffle = is_sample_shuffle
+        self.is_gray = is_gray
+        self.transforms = transforms
 
     @staticmethod
-    def load_avi_frames(path=None):
+    def load_avi_frames(path=None, is_gray=False):
         """
         用来读取每一个.avi格式的文件
         :param path:
@@ -406,14 +414,19 @@ class KTHData(object):
         video = cv2.VideoCapture(path)
         frames = []
         while video.isOpened():
-            ret, frame = video.read()
+            ret, frame = video.read()  # frame: (120, 160, 3) <class 'numpy.ndarray'>
             if not ret:  # ret是一个布尔值，表示是否成功读取帧图像的数据，frame是读取到的帧图像数据。
                 break
+            if is_gray:
+                frame = Image.fromarray(frame)
+                frame = frame.convert("L")
+                frame = np.array(frame.getdata()).reshape((120, 160, 1))
             frames.append(frame)
         logging.info(f" ## 该视频一共有{len(frames)}帧")
-        return np.array(frames)
+        return np.array(frames, dtype=np.uint8)
+        # 必须要转换成np.uint8类型，否则transforms.ToTensor()中的标准化会无效
 
-    @process_cache(unique_key=["frame_len"])
+    @process_cache(unique_key=["frame_len", "is_gray"])
     def data_process(self, file_path=None):
         train_data, val_data, test_data = [], [], []
         for label, dir_name in enumerate(self.CATEGORIES):  # 遍历每个文件夹
@@ -422,12 +435,11 @@ class KTHData(object):
             for name in video_names:  # 遍历当前文件夹中的每个视频
                 people_id = int(name[6:8])  # 取人员编号
                 video_path = os.path.join(video_dir, name)  # 得到文件的绝对路径
-                frames = self.load_avi_frames(video_path)  # 读取该文件
+                frames = self.load_avi_frames(video_path, self.is_gray)  # 读取该文件
                 s_idx, e_idx = 0, self.frame_len
                 while e_idx <= len(frames):  # 开始采样样本
                     logging.info(f" ## 截取帧子序列 [{s_idx}:{e_idx}]")
-                    sub_frames = torch.tensor(frames[s_idx:e_idx])  # [frame_len, 120, 160, 3]
-                    label = torch.tensor(label, dtype=torch.long)
+                    sub_frames = frames[s_idx:e_idx]  # [frame_len, 120, 160, 3]
                     if people_id in self.TRAIN_PEOPLE_ID:
                         train_data.append((sub_frames, label))
                     elif people_id in self.VAL_PEOPLE_ID:
@@ -449,10 +461,17 @@ class KTHData(object):
                  [batch_size, frame_len, channels, height, width]
                  [batch_size, ]
         """
-
         batch_frames, batch_label = [], []
         for (frames, label) in data_batch:  # 开始对一个batch中的每一个样本进行处理。
-            batch_frames.append(frames.permute(0, 3, 1, 2))  # [[frame_len, channels, height, width], [], []]
+            # frames的形状为 [frame_len, channels, height, width]
+            if self.transforms is not None:
+                # 遍历序列里的每一帧，frame的形状[height, width, channels]
+                # 经过transforms.ToTensor()后的形状为[channels, height, width]
+                frames = torch.stack([self.transforms(frame) for frame in frames], dim=0)
+            else:
+                frames = torch.tensor(frames.transpose(0, 3, 1, 2))  # [frame_len, channels, height, width]
+                logging.info(f"{frames.shape}")
+            batch_frames.append(frames)  # [[frame_len, channels, height, width], [], []]
             batch_label.append(label)
         batch_frames = torch.stack(batch_frames, dim=0)  # [batch_size, frame_len, channels, height, width]
         batch_label = torch.tensor(batch_label, dtype=torch.long)
