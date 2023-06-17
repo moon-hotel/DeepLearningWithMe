@@ -385,8 +385,7 @@ class KTHData(object):
     载入KTH数据集，下载地址：https://www.csc.kth.se/cvap/actions/ 一共包含6个zip压缩包
     """
     DATA_DIR = os.path.join(DATA_HOME, 'kth')
-    # CATEGORIES = ["boxing", "handclapping", "handwaving", "jogging", "running", "walking"]
-    CATEGORIES = ["boxing"]
+    CATEGORIES = ["boxing", "handclapping", "handwaving", "jogging", "running", "walking"]
     TRAIN_PEOPLE_ID = [1, 2, 4, 5, 6, 7, 9, 11, 12, 15, 17, 18, 20, 21, 22, 23, 24]  # 25*0.7 = 17
     VAL_PEOPLE_ID = [3, 8, 10, 19, 25]  # 25*0.2 = 5
     TEST_PEOPLE_ID = [13, 14, 16]  # 25*0.1 = 3
@@ -423,7 +422,7 @@ class KTHData(object):
                 frame = np.array(frame.getdata()).reshape((120, 160, 1))
             frames.append(frame)
         logging.info(f" ## 该视频一共有{len(frames)}帧")
-        return np.array(frames, dtype=np.uint8)
+        return np.array(frames, dtype=np.uint8) # [n, height, width, channels]
         # 必须要转换成np.uint8类型，否则transforms.ToTensor()中的标准化会无效
 
     @process_cache(unique_key=["frame_len", "is_gray"])
@@ -439,7 +438,7 @@ class KTHData(object):
                 s_idx, e_idx = 0, self.frame_len
                 while e_idx <= len(frames):  # 开始采样样本
                     logging.info(f" ## 截取帧子序列 [{s_idx}:{e_idx}]")
-                    sub_frames = frames[s_idx:e_idx]  # [frame_len, 120, 160, 3]
+                    sub_frames = frames[s_idx:e_idx]  # [frame_len, 120, 160, channels]
                     if people_id in self.TRAIN_PEOPLE_ID:
                         train_data.append((sub_frames, label))
                     elif people_id in self.VAL_PEOPLE_ID:
@@ -463,11 +462,11 @@ class KTHData(object):
         """
         batch_frames, batch_label = [], []
         for (frames, label) in data_batch:  # 开始对一个batch中的每一个样本进行处理。
-            # frames的形状为 [frame_len, channels, height, width]
+            # frames的形状为 [frame_len, height, width,channels]
             if self.transforms is not None:
                 # 遍历序列里的每一帧，frame的形状[height, width, channels]
                 # 经过transforms.ToTensor()后的形状为[channels, height, width]
-                frames = torch.stack([self.transforms(frame) for frame in frames], dim=0)
+                frames = torch.stack([self.transforms(frame) for frame in frames], dim=0) # [frame_len, channels, height, width]
             else:
                 frames = torch.tensor(frames.transpose(0, 3, 1, 2))  # [frame_len, channels, height, width]
                 logging.info(f"{frames.shape}")
