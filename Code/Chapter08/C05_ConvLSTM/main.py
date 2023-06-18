@@ -10,7 +10,7 @@ def example1():
     batch_size = 1
     time_step = 4
     height, width = 16, 16
-    x = torch.rand((batch_size, time_step, num_layers, height, height))
+    x = torch.rand((batch_size, time_step, in_channels, height, height))
     model = ConvLSTM(in_channels=in_channels,
                      out_channels=out_channels,
                      kernel_size=kernel_size,
@@ -31,7 +31,7 @@ def example2():
     batch_size = 1
     time_step = 4
     height, width = 16, 16
-    x = torch.rand((batch_size, time_step, num_layers, height, height))
+    x = torch.rand((batch_size, time_step, in_channels, height, height))
     model = ConvLSTM(in_channels=in_channels,
                      out_channels=out_channels,
                      kernel_size=kernel_size,
@@ -45,6 +45,6 @@ def example2():
     print(layer_output_list[-1][:, -1])
 
 if __name__ == '__main__':
-    # example1()
-    example2()
+    example1()
+    # example2()
 
