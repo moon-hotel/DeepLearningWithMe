@@ -21,7 +21,7 @@ def OP_3DCNNC():
     width = 32
 
     kernel_size = (2, 3, 3)  # (depth, h, w), 或者 kernel_size = 1
-    stride = (1, 1, 1)  # 或者 stride = 1
+    stride = (1, 1, 1)  # 或者 stride = 1， 分别表示在depth, h, w这3个维度上进行移动
     padding = (0, 1, 1)  # 分别对 depth, h, w这3个维度进行padding
     out_channels = 3
 
@@ -52,7 +52,7 @@ def compute():
                              [[2, 0, 2], [1, 1, 0], [0, 1, 0]]]]])
     # print(weight.shape) # [out_channels, in_channels, depth, height, width] torch.Size([2,2,2,3,3])
     bias = torch.tensor([-70, -80])
-    result = F.conv3d(input, weight,bias)
+    result = F.conv3d(input, weight, bias)
     print(result)  # [batch_size, out_channels, frame_len_out, h_out, w_out] torch.Size([1, 2, 2, 3, 3])
     # tensor([[[[[  3,  14,  34],
     #            [ 22,  13,  27],
@@ -72,6 +72,23 @@ def compute():
     #            [ 72,  79,  92]]]]])
 
 
+def max_pool():
+    input = torch.tensor(
+        [[[[[8, 2, 2, 1, 4], [9, 2, 6, 9, 4], [5, 9, 0, 6, 6], [1, 7, 1, 4, 9], [1, 2, 3, 7, 6]],  # channel 1   frame 1
+           [[7, 0, 1, 6, 8], [2, 2, 5, 9, 0], [3, 2, 1, 8, 6], [5, 1, 6, 2, 5], [4, 9, 9, 4, 8]],  #             frame 2
+           [[9, 7, 7, 6, 7], [0, 9, 7, 4, 9], [3, 5, 3, 3, 7], [5, 9, 7, 6, 7], [6, 9, 3, 2, 2]]], #             frame 3
+
+          [[[3, 3, 3, 7, 5], [3, 7, 7, 4, 3], [6, 6, 0, 7, 7], [5, 3, 2, 0, 8], [0, 1, 9, 4, 4]],  # channel 2  frame 1
+           [[1, 0, 0, 8, 8], [8, 0, 5, 3, 3], [5, 5, 4, 0, 6], [7, 9, 1, 3, 6], [9, 2, 1, 6, 1]],  #            frame 2
+           [[3, 5, 1, 9, 7], [1, 5, 5, 8, 0], [1, 5, 9, 2, 2], [5, 4, 8, 6, 7], [1, 6, 3, 2, 1.]]]]]) #         frame 3
+    # print(input.shape) # [batch_size, in_channels, frame_len, height, width] torch.Size([1,2,3, 5, 5])
+    pool = nn.MaxPool3d(kernel_size=(2, 3, 3), stride=1)
+    # pool = nn.AvgPool3d(kernel_size=(2, 3, 3), stride=1)
+    print(pool(input))  # shape:  [batch_size, out_channels, frame_len_out, h_out, w_out] torch.Size([1, 2, 2, 3, 3])
+
+
+
 if __name__ == '__main__':
-    OP_3DCNNC()
     # compute()
+    # OP_3DCNNC()
+    max_pool()
