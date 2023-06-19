@@ -15,8 +15,10 @@ class ResUnit(nn.Module):
     def __init__(self, res_in_chs=16, res_out_chs=32):
         super().__init__()
         self.block = nn.Sequential(
+            nn.BatchNorm2d(res_in_chs),
             nn.ReLU(inplace=True),
             nn.Conv2d(res_in_chs, res_out_chs, 3, stride=1, padding=1),
+            nn.BatchNorm2d(res_out_chs),
             nn.ReLU(inplace=True),
             nn.Conv2d(res_out_chs, res_in_chs, 3, stride=1, padding=1))
 
