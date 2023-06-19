@@ -47,7 +47,6 @@ class ModelConfig(object):
         self.batch_size = 8
         self.height = 60
         self.width = 80
-        self.batch_first = True
         self.frames = 15
 
 
