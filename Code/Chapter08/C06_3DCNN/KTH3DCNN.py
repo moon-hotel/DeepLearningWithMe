@@ -30,6 +30,11 @@ class KTH3DCNN(nn.Module):
             nn.Linear(in_features=128, out_features=config.num_classes))
 
     def forward(self, x, labels=None):
+        """
+        :param x: [batch_size, in_channels, frames, height, width]
+        :param labels:
+        :return:
+        """
         x = self.features(x)
         logits = self.classifier(x)  # [batch_size, num_classes]
         if labels is not None:
