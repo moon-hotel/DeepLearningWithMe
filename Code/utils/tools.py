@@ -10,6 +10,9 @@ import torch
 import logging
 import time
 import os
+import numpy as np
+from datetime import datetime
+import pandas as pd
 
 
 def get_gpus(num=None):
@@ -37,7 +40,8 @@ def process_cache(unique_key=None):
     :return:
     """
     if unique_key is None:
-        raise ValueError("unique_key 不能为空, 请指定相关数据集构造类的成员变量，如['top_k', 'cut_words', 'max_sen_len']")
+        raise ValueError(
+            "unique_key 不能为空, 请指定相关数据集构造类的成员变量，如['top_k', 'cut_words', 'max_sen_len']")
 
     def decorating_function(func):
         def wrapper(*args, **kwargs):
@@ -67,3 +71,84 @@ def process_cache(unique_key=None):
         return wrapper
 
     return decorating_function
+
+
+def string2timestamp(strings, T=48):
+    """
+    将字符串类型的时间转换成时间戳格式
+    :param strings:
+    :param T: 表示一天有多少个时间片
+    :return:
+    example:
+    str = [b'2013070101', b'2013070102']
+    如 2013070101表示 2013年7月1日第1个时间片
+    print(string2timestamp(str))
+    [Timestamp('2013-07-01 00:00:00'), Timestamp('2013-07-01 00:30:00')]
+    """
+    timestamps = []
+
+    time_per_slot = 24.0 / T  # 每个时间片多少小时
+    num_per_T = T // 24  # 每个小时有多少时间片
+    for t in strings:
+        year, month, day, slot = int(t[:4]), int(t[4:6]), int(t[6:8]), int(t[8:]) - 1
+        timestamp = datetime(year, month, day, hour=int(slot * time_per_slot),
+                             minute=(slot % num_per_T) * int(60.0 * time_per_slot))
+        timestamps.append(pd.Timestamp(timestamp))
+    return timestamps
+
+
+def timestamp2vec(timestamps):
+    """
+    将字符串类型的时间换为表示星期几和工作日的向量
+    :param timestamps:
+    :return:
+    exampel:
+    [b'2018120505', b'2018120106']
+    #[[0 0 1 0 0 0 0 1]  当天是星期三，且为工作日
+     [0 0 0 0 0 1 0 0]]  当天是星期六，且为休息日
+
+    """
+    # tm_wday range [0, 6], Monday is 0
+    vec = [time.strptime(str(t[:8], encoding='utf-8'), '%Y%m%d').tm_wday for t in timestamps]
+    # 通过tm_wday方法得到当天是星期几
+    ret = []
+    for i in vec:
+        v = [0 for _ in range(7)]
+        v[i] = 1
+        if i >= 5:
+            v.append(0)  # weekend
+        else:
+            v.append(1)  # weekday
+        ret.append(v)
+    return np.asarray(ret)
+
+
+class MinMaxNormalization(object):
+    """
+    特征缩放，公式如下：
+        MinMax Normalization --> [-1, 1]
+        x = (x - min) / (max - min).
+        x = x * 2 - 1
+    """
+
+    def __init__(self):
+        pass
+
+    def fit(self, X):
+        self._min = X.min()
+        self._max = X.max()
+        logging.info(f"MinMaxNormalization: min = {self._min}, max = {self._max}")
+
+    def transform(self, X):
+        X = 1. * (X - self._min) / (self._max - self._min)
+        X = X * 2. - 1.
+        return X
+
+    def fit_transform(self, X):
+        self.fit(X)
+        return self.transform(X)
+
+    def inverse_transform(self, X):
+        X = (X + 1.) / 2.
+        X = 1. * X * (self._max - self._min) + self._min
+        return X
