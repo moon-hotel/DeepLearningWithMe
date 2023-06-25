@@ -12,6 +12,8 @@ import logging
 import opencc
 import jieba
 import cv2
+import h5py
+import time
 
 from tqdm import tqdm
 import numpy as np
@@ -422,7 +424,7 @@ class KTHData(object):
                 frame = np.array(frame.getdata()).reshape((120, 160, 1))
             frames.append(frame)
         logging.info(f" ## 该视频一共有{len(frames)}帧")
-        return np.array(frames, dtype=np.uint8) # [n, height, width, channels]
+        return np.array(frames, dtype=np.uint8)  # [n, height, width, channels]
         # 必须要转换成np.uint8类型，否则transforms.ToTensor()中的标准化会无效
 
     @process_cache(unique_key=["frame_len", "is_gray"])
@@ -466,7 +468,8 @@ class KTHData(object):
             if self.transforms is not None:
                 # 遍历序列里的每一帧，frame的形状[height, width, channels]
                 # 经过transforms.ToTensor()后的形状为[channels, height, width]
-                frames = torch.stack([self.transforms(frame) for frame in frames], dim=0) # [frame_len, channels, height, width]
+                frames = torch.stack([self.transforms(frame) for frame in frames],
+                                     dim=0)  # [frame_len, channels, height, width]
             else:
                 frames = torch.tensor(frames.transpose(0, 3, 1, 2))  # [frame_len, channels, height, width]
                 logging.info(f"{frames.shape}")
@@ -515,3 +518,200 @@ class KTHData(object):
             axi.set(xticks=[], yticks=[])
         plt.tight_layout()
         plt.show()
+
+
+class TaxiBJ(object):
+    """
+    载入北京出租车数据集，数据集可关注微信公众号@月来客栈 获取
+    """
+    DATA_DIR = os.path.join(DATA_HOME, 'TaxiBJ')
+    FILE_PATH_FLOW = [os.path.join(DATA_DIR, 'BJ13_M32x32_T30_InOut.h5'),
+                      os.path.join(DATA_DIR, 'BJ14_M32x32_T30_InOut.h5'),
+                      os.path.join(DATA_DIR, 'BJ15_M32x32_T30_InOut.h5'),
+                      os.path.join(DATA_DIR, 'BJ16_M32x32_T30_InOut.h5')]
+    FILE_PATH_HOLIDAY = os.path.join(DATA_DIR, 'BJ_Holiday.txt')
+    FILE_PATH_METEORO = os.path.join(DATA_DIR, 'BJ_Meteorology.h5')
+
+    def __init__(self, T=48, nb_flow=2):
+        self.T = T
+        self.nb_flow = nb_flow
+
+    def load_holiday(self, timeslots=None):
+        """
+        加载节假日列表，并返回给定时间戳中那些日期是节假日，哪些不是
+        :param timeslots: 字符串形式的时间戳，如: 2018120106
+        :param filepath:
+        :return: [[1],[1],[0],[0],[0]...] 当前时间片对应为假期则为1,否则为0
+        e.g. load_holiday(timeslots=['2014120106','2014120206','2014010106','2014120706'])
+            [[0.]
+             [0.]
+             [1.] 元旦为节假日
+             [0.]] # shape:(4,1)
+        """
+        filepath = self.FILE_PATH_HOLIDAY
+        with open(filepath, 'r') as f:
+            holidays = f.readlines()
+            holidays = set([h.strip() for h in holidays])
+            # 得到一个假期列表，形如：['20130101', '20130102', '20130103', '20130209', ...]
+            H = np.zeros(len(timeslots))
+            for i, slot in enumerate(timeslots):
+                if slot[:8] in holidays:  # 取前8位为日期，判断其是否为节假日
+                    H[i] = 1
+        return H[:, None]  # shape: [n,1]
+
+    def load_meteorology(self, timeslots=None):
+        """
+        In real-world, we don't have the meteorol data in the predicted timeslot, instead, we use the meteoral at previous timeslots,
+        i.e., slot = predicted_slot - timeslot (you can use predicted meteorol data as well)
+        载入气象数据
+        :param timeslots: 字符串形式的时间戳
+        :return:
+        """
+        file_path = self.FILE_PATH_METEORO
+        with h5py.File(file_path, 'r') as f:
+            Timeslot = f['date'][:]  # 时间片
+            WindSpeed = f['WindSpeed'][:]  # 风速
+            Weather = f['Weather'][:]  # 天气
+            Temperature = f['Temperature'][:]  # 温度
+        M = dict()  # map timeslot to index
+        for i, slot in enumerate(Timeslot):
+            # 给每个时间戳赋一个索引
+            M[slot] = i  # {...,b'2016061335': 59003, b'2016061336': 59004, b'2016061337': 59005}
+
+        WS = []  # WindSpeed
+        WR = []  # Weather
+        TE = []  # Temperature
+        for slot in timeslots:
+            predicted_id = M[slot]  # 取索引
+            cur_id = predicted_id - 1  # 取上一个索引，因为一般来说预测第t时刻时只能取其t-1时刻的天气信息
+            WS.append(WindSpeed[cur_id])  #
+            WR.append(Weather[cur_id])
+            TE.append(Temperature[cur_id])
+        WS = np.asarray(WS)  # shape: (n,)
+        WR = np.asarray(WR)  # shape: (n,)
+        TE = np.asarray(TE)  # shape: (n,)
+
+        # 0-1 scale
+        # 这里是一次对所有的温度和风速进行标准化，严格来说应该是需要划分乘训练集和测试集之后再标准化
+        WS = 1. * (WS - WS.min()) / (WS.max() - WS.min())
+        TE = 1. * (TE - TE.min()) / (TE.max() - TE.min())
+        #
+        logging.info("meteorol shape: ", WS.shape, WR.shape, TE.shape)
+        # concatenate all these attributes
+        merge_data = np.hstack([WR, WS[:, None], TE[:, None]])  # [n,19]
+        # (n,17) (n,1) (n,1) ==> (n,19)
+        logging.info('meger shape:', merge_data.shape)
+        return merge_data
+
+    @staticmethod
+    def load_stdata(fname):
+        """
+        载入原始数据
+        split the data and date(timestamps)
+        :param fname:
+        :return:
+        """
+        f = h5py.File(fname, 'r')
+        data = f['data'][:]
+        timestamps = f['date'][:]
+        f.close()
+        return data, timestamps
+
+    @staticmethod
+    def stat(fname):
+        """
+        统计数据信息
+        count the valid data
+        :param fname:
+        :return: like below
+
+        ==========stat==========
+        data shape: (7220, 2, 32, 32)
+        # of days: 162, from 2015-11-01 to 2016-04-10
+        # of timeslots: 7776
+        # of timeslots (available): 7220
+        missing ratio of timeslots: 7.2%
+        max: 1250.000, min: 0.000
+        ==========stat==========
+
+        """
+
+        def get_nb_timeslot(f):
+            """
+            count the number of timeslot of given data
+            :param f:
+            :return:
+            """
+            s = f['date'][0]
+            e = f['date'][-1]
+            year, month, day = map(int, [s[:4], s[4:6], s[6:8]])
+            ts = time.strptime("%04i-%02i-%02i" % (year, month, day), "%Y-%m-%d")
+            year, month, day = map(int, [e[:4], e[4:6], e[6:8]])
+            te = time.strptime("%04i-%02i-%02i" % (year, month, day), "%Y-%m-%d")
+            nb_timeslot = (time.mktime(te) - time.mktime(ts)) / (0.5 * 3600) + 48
+            time_s_str, time_e_str = time.strftime("%Y-%m-%d", ts), time.strftime("%Y-%m-%d", te)
+            return nb_timeslot, time_s_str, time_e_str
+
+        with h5py.File(fname) as f:
+            nb_timeslot, time_s_str, time_e_str = get_nb_timeslot(f)
+            nb_day = int(nb_timeslot / 48)
+            mmax = f['data'][:].max()
+            mmin = f['data'][:].min()
+            stat = '=' * 10 + 'stat' + '=' * 10 + '\n' + \
+                   '\tdata shape: %s\n' % str(f['data'].shape) + \
+                   '\t# of days: %i, from %s to %s\n' % (nb_day, time_s_str, time_e_str) + \
+                   '\t# of timeslots: %i\n' % int(nb_timeslot) + \
+                   '\t# of timeslots (available): %i\n' % f['date'].shape[0] + \
+                   '\tmissing ratio of timeslots: %.1f%%\n' % ((1. - float(f['date'].shape[0] / nb_timeslot)) * 100) + \
+                   '\tmax: %.3f, min: %.3f\n' % (mmax, mmin) + \
+                   '\t' + '=' * 10 + 'stat' + '=' * 10
+            logging.info(f"\n\t{stat}")
+
+    @staticmethod
+    def remove_incomplete_days(data, timestamps, T=48):
+        """
+        remove a certain day which has not 48 timestamps
+        :param data:
+        :param timestamps:
+        :param T:
+        :return:
+        """
+        days = []  # available days: some day only contain some seqs
+        days_incomplete = []
+        i = 0
+        while i < len(timestamps):
+            if int(timestamps[i][8:]) != 1:
+                i += 1
+            elif i + T - 1 < len(timestamps) and int(timestamps[i + T - 1][8:]) == T:
+                days.append(timestamps[i][:8])
+                i += T
+            else:
+                days_incomplete.append(timestamps[i][:8])
+                i += 1
+        logging.info(f"Incomplete days: {days_incomplete}")
+        days = set(days)
+        idx = []
+        for i, t in enumerate(timestamps):
+            if t[:8] in days:
+                idx.append(i)
+
+        data = data[idx]
+        timestamps = [timestamps[i] for i in idx]
+        return data, timestamps
+
+    def data_process(self):
+        data_all = []
+        timestamps_all = list()
+        for fname in self.FILE_PATH_FLOW:
+            logging.info(f" # 正在载入文件: {fname}")
+            self.stat(fname)
+            data, timestamps = self.load_stdata(fname)
+            data, timestamps = self.remove_incomplete_days(data, timestamps, self.T)
+            # data: ndarray  shape: [num, 2, 32, 32]
+            # timestamps: [b'2013070101', b'2013070102', b'2013070103',...]
+            data = data[:, :self.nb_flow]
+            logging.info(data.shape)
+            data[data < 0] = 0.  # 处理异常，把小于0的数据替换为0
+            data_all.append(data) # 保存每个文件读取处理完成后的结果
+            timestamps_all.append(timestamps)
+            logging.info("\n")
