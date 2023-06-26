@@ -78,14 +78,19 @@ class STResNet(nn.Module):
         self.w_c = nn.Parameter(torch.randn([1, config.num_flow, config.map_height, config.map_width]))
         self.ext_feature = FeatureExt(config.ext_dim, config.num_flow, config.map_height, config.map_width)
 
-    def forward(self, x):
+    def forward(self, x, y=None):
         x1 = self.trend(x[0])
         x2 = self.period(x[1])
         x3 = self.close(x[2])
         y1 = x1 * self.w_t + x2 * self.w_p + x3 * self.w_c
         y2 = self.ext_feature(x[3])
-        y = F.tanh(y1 + y2)
-        return y
+        logits = F.tanh(y1 + y2)
+        if y is not None:
+            loss_fct = nn.MSELoss()
+            loss = loss_fct(logits, y)
+            return loss, logits
+        else:
+            return logits
 
 
 class ModelConfig(object):
@@ -108,6 +113,11 @@ if __name__ == '__main__':
     x1 = torch.randn([16, config.num_flow * config.len_period, config.map_height, config.map_width])
     x2 = torch.randn([16, config.num_flow * config.len_trend, config.map_height, config.map_width])
     x3 = torch.randint(0, 2, size=[16, config.ext_dim])
+    y = torch.randn([16, config.num_flow, config.map_height, config.map_width])
     x = [x0, x1, x2, x3]
     st = STResNet(config)
     print(st(x).shape)
+    loss, logits = st(x,y)
+    print(logits.shape)
+    print(loss)
+
