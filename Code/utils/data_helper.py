@@ -17,11 +17,16 @@ import time
 
 from tqdm import tqdm
 import numpy as np
+from copy import copy
 from PIL import Image
 from torch.utils.data import DataLoader
 from collections import Counter
 import matplotlib.pyplot as plt
+import pandas as pd
 from .tools import process_cache
+from .tools import MinMaxNormalization
+from .tools import timestamp2vec
+from .tools import string2timestamp
 
 PROJECT_HOME = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_HOME = os.path.join(PROJECT_HOME, 'data')
@@ -520,6 +525,110 @@ class KTHData(object):
         plt.show()
 
 
+class STMatrix(object):
+    """docstring for STMatrix
+    构造采样数据帧
+    """
+
+    def __init__(self, data, timestamps, T=48, CheckComplete=True):
+        super(STMatrix, self).__init__()
+        assert len(data) == len(timestamps)
+        self.data = data
+        self.timestamps = timestamps  # [b'2013070101', b'2013070102']
+        self.T = T
+        self.pd_timestamps = string2timestamp(timestamps, T=self.T)
+        if CheckComplete:
+            self.check_complete()
+        # index
+        self.make_index()  # 将时间戳：做成一个字典，也就是给每个时间戳一个序号
+
+    def make_index(self):
+        self.get_index = dict()
+        for i, ts in enumerate(self.pd_timestamps):
+            self.get_index[ts] = i
+
+    def check_complete(self):
+        missing_timestamps = []
+        offset = pd.DateOffset(minutes=24 * 60 // self.T)
+        pd_timestamps = self.pd_timestamps
+        i = 1
+        while i < len(pd_timestamps):
+            if pd_timestamps[i - 1] + offset != pd_timestamps[i]:
+                missing_timestamps.append("(%s -- %s)" % (pd_timestamps[i - 1], pd_timestamps[i]))
+            i += 1
+        for v in missing_timestamps:
+            logging.info(v)
+        assert len(missing_timestamps) == 0
+
+    def get_matrix(self, timestamp):  # 给定时间戳返回对于的数据
+        return self.data[self.get_index[timestamp]]
+
+    def save(self, fname):
+        pass
+
+    def check_it(self, depends):
+        for d in depends:
+            if d not in self.get_index.keys():
+                return False
+        return True
+
+    def create_dataset(self, len_closeness=3, len_trend=3, TrendInterval=7, len_period=3, PeriodInterval=1):
+        """current version
+
+        """
+        # offset_week = pd.DateOffset(days=7)
+        offset_frame = pd.DateOffset(minutes=24 * 60 // self.T)  # 时间偏移 minutes = 30
+        XC = []
+        XP = []
+        XT = []
+        Y = []
+        timestamps_Y = []
+        depends = [range(1, len_closeness + 1),
+                   [PeriodInterval * self.T * j for j in range(1, len_period + 1)],
+                   [TrendInterval * self.T * j for j in range(1, len_trend + 1)]]
+        # depends # [range(1, 4), [48, 96, 144], [336, 672, 1008]]
+        i = max(self.T * TrendInterval * len_trend, self.T * PeriodInterval * len_period, len_closeness)
+        while i < len(self.pd_timestamps):
+            Flag = True
+            for depend in depends:
+                if Flag is False:
+                    break
+                Flag = self.check_it([self.pd_timestamps[i] - j * offset_frame for j in depend])
+
+            if Flag is False:
+                i += 1
+                continue
+            x_c = [self.get_matrix(self.pd_timestamps[i] - j * offset_frame) for j in depends[0]]
+            # 取当前时刻的前3个时间片的数据数据构成“邻近性”模块中一个输入序列
+            # 例如当前时刻为[Timestamp('2013-07-01 00:00:00')]
+            # 则取：
+            # [Timestamp('2013-06-30 23:30:00'), Timestamp('2013-06-30 23:00:00'), Timestamp('2013-06-30 22:30:00')]
+            #  三个时刻所对应的in-out flow为一个序列
+            x_p = [self.get_matrix(self.pd_timestamps[i] - j * offset_frame) for j in depends[1]]
+            # 取当前时刻 前 1*PeriodInterval,2*PeriodInterval,...,len_period*PeriodInterval
+            # 天对应时刻的in-out flow 作为一个序列，例如按默认值为 取前1、2、3天同一时刻的In-out flow
+            x_t = [self.get_matrix(self.pd_timestamps[i] - j * offset_frame) for j in depends[2]]
+            # 取当前时刻 前 1*TrendInterval,2*TrendInterval,...,len_trend*TrendInterval
+            # 天对应时刻的in-out flow 作为一个序列,例如按默认值为 取 前7、14、21天同一时刻的In-out flow
+            y = self.get_matrix(self.pd_timestamps[i])
+            if len_closeness > 0:
+                XC.append(np.vstack(x_c))
+                # a.shape=[2,32,32] b.shape=[2,32,32] c=np.vstack((a,b)) -->c.shape = [4,32,32]
+            if len_period > 0:
+                XP.append(np.vstack(x_p))
+            if len_trend > 0:
+                XT.append(np.vstack(x_t))
+            Y.append(y)
+            timestamps_Y.append(self.timestamps[i])  # []
+            i += 1
+        XC = np.asarray(XC)  # 模拟 邻近性的 数据 [?,6,32,32]
+        XP = np.asarray(XP)  # 模拟 周期性的 数据 隔天
+        XT = np.asarray(XT)  # 模拟 趋势性的 数据 隔周
+        Y = np.asarray(Y)  # [?,2,32,32]
+        logging.info(f"XC shape: {XC.shape}, XP shape: {XP.shape}, XT shape: {XT.shape} , Y shape: {Y.shape}")
+        return XC, XP, XT, Y, timestamps_Y
+
+
 class TaxiBJ(object):
     """
     载入北京出租车数据集，数据集可关注微信公众号@月来客栈 获取
@@ -531,10 +640,24 @@ class TaxiBJ(object):
                       os.path.join(DATA_DIR, 'BJ16_M32x32_T30_InOut.h5')]
     FILE_PATH_HOLIDAY = os.path.join(DATA_DIR, 'BJ_Holiday.txt')
     FILE_PATH_METEORO = os.path.join(DATA_DIR, 'BJ_Meteorology.h5')
+    CATH_FILE_PATH = os.path.join(DATA_DIR, 'TaxiBJ.pt')
 
-    def __init__(self, T=48, nb_flow=2):
+    def __init__(self, T=48, nb_flow=2, len_test=None, len_closeness=None,
+                 len_period=None, len_trend=None, meta_data=True,
+                 meteorol_data=True, holiday_data=True, batch_size=4, ):
         self.T = T
         self.nb_flow = nb_flow
+        self.len_test = len_test
+        self.len_closeness = len_closeness
+        self.len_period = len_period
+        self.len_trend = len_trend
+        self.meta_data = meta_data
+        self.meteorology_data = meteorol_data
+        self.holiday_data = holiday_data
+        self.batch_size=batch_size
+        assert len_closeness > 0, "len_closeness 需要大于0"
+        assert len_period > 0, "len_period 需要大于0"
+        assert len_trend > 0, "len_trend 需要大于0"
 
     def load_holiday(self, timeslots=None):
         """
@@ -596,11 +719,11 @@ class TaxiBJ(object):
         WS = 1. * (WS - WS.min()) / (WS.max() - WS.min())
         TE = 1. * (TE - TE.min()) / (TE.max() - TE.min())
         #
-        logging.info("meteorol shape: ", WS.shape, WR.shape, TE.shape)
+        logging.info(f"meteorol shape: {WS.shape, WR.shape, TE.shape}")
         # concatenate all these attributes
         merge_data = np.hstack([WR, WS[:, None], TE[:, None]])  # [n,19]
         # (n,17) (n,1) (n,1) ==> (n,19)
-        logging.info('meger shape:', merge_data.shape)
+        logging.info(f'meger shape:{merge_data.shape}')
         return merge_data
 
     @staticmethod
@@ -699,7 +822,9 @@ class TaxiBJ(object):
         timestamps = [timestamps[i] for i in idx]
         return data, timestamps
 
-    def data_process(self):
+    @process_cache(unique_key=["T", "nb_flow", "len_test", "len_closeness",
+                               "len_period", "meta_data", "meteorology_data", "holiday_data"])
+    def data_process(self, file_path=None):
         data_all = []
         timestamps_all = list()
         for fname in self.FILE_PATH_FLOW:
@@ -712,6 +837,105 @@ class TaxiBJ(object):
             data = data[:, :self.nb_flow]
             logging.info(data.shape)
             data[data < 0] = 0.  # 处理异常，把小于0的数据替换为0
-            data_all.append(data) # 保存每个文件读取处理完成后的结果
+            data_all.append(data)  # 保存每个文件读取处理完成后的结果
             timestamps_all.append(timestamps)
             logging.info("\n")
+        # minmax_scale
+        data_train = np.vstack(copy(data_all))[:-self.len_test]  # 划分出训练集部分
+        logging.info(f'train data shape: {data_train.shape}')
+        mmn = MinMaxNormalization()
+        mmn.fit(data_train)  # 在训练集上计算相关参数
+        data_all_mmn = [mmn.transform(d) for d in data_all]  # 依次对所有数据用训练集中计算得到的参数进行标准化
+        logging.info(f"timestamps_all示例: {timestamps_all[0][:10]}")
+        XC, XP, XT = [], [], []
+        Y = []
+        timestamps_Y = []
+        for data, timestamps in zip(data_all_mmn, timestamps_all):  # 遍历4个文件中每个文件里的流量数据
+            # instance-based dataset --> sequences with format as (X, Y) where X is
+            # a sequence of images and Y is an image.
+            st = STMatrix(data, timestamps, self.T, CheckComplete=False)  # 采样构造流量数据
+            _XC, _XP, _XT, _Y, _timestamps_Y = st.create_dataset(
+                len_closeness=self.len_closeness, len_period=self.len_period, len_trend=self.len_trend)
+            XC.append(_XC)
+            XP.append(_XP)
+            XT.append(_XT)
+            Y.append(_Y)
+            timestamps_Y += _timestamps_Y  # [ b'2013102232', b'2013102233', b'2013102234', b'2013102235',......]
+        meta_feature = []
+        if self.meta_data:
+            # load time feature
+            time_feature = timestamp2vec(timestamps_Y)  # array: [?,8] 将字符串类型的时间换为表示星期几和工作日的向量
+            meta_feature.append(time_feature)
+        if self.holiday_data:
+            # load holiday
+            holiday_feature = self.load_holiday(timestamps_Y)  # array: [?,1]加载节假日列表，并返回给定时间戳中那些日期是节假日，哪些不是
+            meta_feature.append(holiday_feature)
+        if self.meteorology_data:
+            # load meteorol data
+            meteorol_feature = self.load_meteorology(timestamps_Y)  # array: [?,19] 载入气象数据
+            meta_feature.append(meteorol_feature)
+
+        meta_feature = np.hstack(meta_feature) if len(
+            meta_feature) > 0 else np.asarray(meta_feature)
+        metadata_dim = meta_feature.shape[1] if len(
+            meta_feature.shape) > 1 else None
+        if metadata_dim < 1:
+            metadata_dim = None
+        if self.meta_data and self.holiday_data and self.meteorology_data:
+            logging.info(f' ## time feature: {time_feature.shape}, holiday feature: {holiday_feature.shape},'
+                         f'meteorol feature: {meteorol_feature.shape} mete feature: {meta_feature.shape}')
+            ## time feature: (15072, 8), holiday feature: (15072, 1),meteorol feature: (15072, 19) mete feature: (15072, 28)
+        XC = np.vstack(XC)  # shape = [15072,6,32,32]
+        XP = np.vstack(XP)  # shape = [15072,2,32,32]
+        XT = np.vstack(XT)  # shape = [15072,2,32,32]
+        Y = np.vstack(Y)  # shape = [15072,2,32,32]
+
+        XC_train, XP_train, XT_train, Y_train = \
+            XC[:-self.len_test], XP[:-self.len_test], XT[:-self.len_test], Y[:-self.len_test]
+        XC_test, XP_test, XT_test, Y_test = \
+            XC[-self.len_test:], XP[-self.len_test:], XT[-self.len_test:], Y[-self.len_test:]
+        timestamp_train, timestamp_test = timestamps_Y[:-self.len_test], timestamps_Y[-self.len_test:]
+        meta_feature_train, meta_feature_test = meta_feature[:-self.len_test], meta_feature[-self.len_test:]
+        logging.info(f"数据集构建完毕")
+        logging.info("训练集形状分别为:\n "
+                     f"XC_train: {XC_train.shape}\n"
+                     f"XP_train: {XP_train.shape}\n"
+                     f"XT_train: {XT_train.shape}\n"
+                     f"Y_train: {Y_train.shape}\n"
+                     f"meta_feature_train: {meta_feature_train.shape}\n"
+                     f"timestamp_train: {len(timestamp_train)}\n")
+        logging.info("测试集形状分别为:\n "
+                     f"XC_test: {XC_test.shape}\n"
+                     f"XP_test: {XP_test.shape}\n"
+                     f"XT_test: {XT_test.shape}\n"
+                     f"Y_test: {Y_test.shape}\n"
+                     f"meta_feature_test: {meta_feature_test.shape}\n"
+                     f"timestamp_test: {len(timestamp_test)}\n")
+        train_data = [item for item in zip(XC_train, XP_train, XT_train, Y_train, meta_feature_train, timestamp_train)]
+        test_data = [item for item in zip(XC_test, XP_test, XT_test, Y_test, meta_feature_test, timestamp_test)]
+        data = {"train_data": train_data, "test_data": test_data, "mmn": mmn}
+        return data
+
+    def load_train_test_data(self, is_train=False):
+        data = self.data_process(file_path=self.CATH_FILE_PATH)
+        if not is_train:
+            test_data = data['test_data']
+            mmn = data['mmn']
+            test_iter = DataLoader(test_data, batch_size=self.batch_size, shuffle=True)
+            logging.info(f" ## 测试集构建完毕，一共{len(test_data)}个样本")
+            return test_iter, mmn
+        train_data = data['train_data']
+        train_iter = DataLoader(train_data, batch_size=self.batch_size, shuffle=self.is_sample_shuffle)
+        logging.info(f" ## 训练集构建完毕，样本数量为{len(train_data)}")
+        return train_iter
+
+    def show_example(self, num_id=100):
+        """
+        可视化示例
+        :param num_id:  样本编号
+        :return:
+        """
+        data, _ = self.load_stdata(self.FILE_PATH_FLOW[0])
+        plt.imshow(data[num_id][1], cmap='RdYlGn_r', interpolation='nearest')
+        plt.colorbar()
+        plt.show()
