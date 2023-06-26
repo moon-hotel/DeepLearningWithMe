@@ -11,12 +11,15 @@ from .data_helper import TouTiaoNews
 from .data_helper import TangShi
 from .data_helper import process_cache
 from .data_helper import KTHData
+from .data_helper import TaxiBJ
 
 __all__ = [
+    "tools",
     "process_cache",
     "logger_init",
     "get_gpus",
     "TouTiaoNews",
     "TangShi",
-    "KTHData"
+    "KTHData",
+    "TaxiBJ"
 ]
