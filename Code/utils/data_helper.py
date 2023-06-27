@@ -632,6 +632,7 @@ class STMatrix(object):
 class TaxiBJ(object):
     """
     载入北京出租车数据集，数据集可关注微信公众号@月来客栈 获取
+    此代码修改自郑宇老师团队开源的ST-ResNet模型
     """
     DATA_DIR = os.path.join(DATA_HOME, 'TaxiBJ')
     FILE_PATH_FLOW = [os.path.join(DATA_DIR, 'BJ13_M32x32_T30_InOut.h5'),
@@ -644,7 +645,7 @@ class TaxiBJ(object):
 
     def __init__(self, T=48, nb_flow=2, len_test=None, len_closeness=None,
                  len_period=None, len_trend=None, meta_data=True,
-                 meteorol_data=True, holiday_data=True, batch_size=4, ):
+                 meteorol_data=True, holiday_data=True, batch_size=4, is_sample_shuffle=True):
         self.T = T
         self.nb_flow = nb_flow
         self.len_test = len_test
@@ -654,14 +655,15 @@ class TaxiBJ(object):
         self.meta_data = meta_data
         self.meteorology_data = meteorol_data
         self.holiday_data = holiday_data
-        self.batch_size=batch_size
+        self.batch_size = batch_size
+        self.is_sample_shuffle = is_sample_shuffle
         assert len_closeness > 0, "len_closeness 需要大于0"
         assert len_period > 0, "len_period 需要大于0"
         assert len_trend > 0, "len_trend 需要大于0"
 
     def load_holiday(self, timeslots=None):
         """
-        加载节假日列表，并返回给定时间戳中那些日期是节假日，哪些不是
+        加载节假日列表，并返回给定时间戳中哪些日期是节假日，哪些不是
         :param timeslots: 字符串形式的时间戳，如: 2018120106
         :param filepath:
         :return: [[1],[1],[0],[0],[0]...] 当前时间片对应为假期则为1,否则为0
@@ -885,11 +887,12 @@ class TaxiBJ(object):
             logging.info(f' ## time feature: {time_feature.shape}, holiday feature: {holiday_feature.shape},'
                          f'meteorol feature: {meteorol_feature.shape} mete feature: {meta_feature.shape}')
             ## time feature: (15072, 8), holiday feature: (15072, 1),meteorol feature: (15072, 19) mete feature: (15072, 28)
-        XC = np.vstack(XC)  # shape = [15072,6,32,32]
-        XP = np.vstack(XP)  # shape = [15072,2,32,32]
-        XT = np.vstack(XT)  # shape = [15072,2,32,32]
-        Y = np.vstack(Y)  # shape = [15072,2,32,32]
-
+        XC = torch.tensor(np.vstack(XC), dtype=torch.float32)  # shape = [15072,6,32,32]
+        XP = torch.tensor(np.vstack(XP), dtype=torch.float32)  # shape = [15072,2,32,32]
+        XT = torch.tensor(np.vstack(XT), dtype=torch.float32)  # shape = [15072,2,32,32]
+        Y = torch.tensor(np.vstack(Y), dtype=torch.float32)  # shape = [15072,2,32,32]
+        meta_feature = torch.tensor(meta_feature, dtype=torch.float32)  # shape =[15072, 28]
+        timestamps_Y = [str(item) for item in timestamps_Y]
         XC_train, XP_train, XT_train, Y_train = \
             XC[:-self.len_test], XP[:-self.len_test], XT[:-self.len_test], Y[:-self.len_test]
         XC_test, XP_test, XT_test, Y_test = \
