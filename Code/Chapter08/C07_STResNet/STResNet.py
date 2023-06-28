@@ -72,10 +72,10 @@ class STResNet(nn.Module):
                                    config.conv1_out_chs, config.num_res_unit, config.res_out_chs)
         self.trend = ResComponent(config.nb_flow * config.len_trend,
                                   config.conv1_out_chs, config.num_res_unit, config.res_out_chs)
-        self.w_t = nn.Parameter(torch.randn([1, config.nb_flow, config.map_height, config.map_width]))
-        self.w_p = nn.Parameter(torch.randn([1, config.nb_flow, config.map_height, config.map_width]))
-        self.w_c = nn.Parameter(torch.randn([1, config.nb_flow, config.map_height, config.map_width]))
         self.ext_feature = FeatureExt(config.ext_dim, config.nb_flow, config.map_height, config.map_width)
+        self.w_c = nn.Parameter(torch.randn([1, config.nb_flow, config.map_height, config.map_width]))
+        self.w_p = nn.Parameter(torch.randn([1, config.nb_flow, config.map_height, config.map_width]))
+        self.w_t = nn.Parameter(torch.randn([1, config.nb_flow, config.map_height, config.map_width]))
 
     def forward(self, x, y=None):
         x0 = self.close(x[0])
@@ -120,3 +120,65 @@ if __name__ == '__main__':
     print(logits.shape)
     print(loss)
     print(st)
+
+    # torch.Size([16, 2, 32, 32])
+    # torch.Size([16, 2, 32, 32])
+    # tensor(1.4513, grad_fn=<MseLossBackward0>)
+    # STResNet(
+    #   (close): ResComponent(
+    #     (conv1): Conv2d(6, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    #     (res_units): ModuleList(
+    #       (0-11): 12 x ResUnit(
+    #         (block): Sequential(
+    #           (0): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    #           (1): ReLU(inplace=True)
+    #           (2): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    #           (3): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    #           (4): ReLU(inplace=True)
+    #           (5): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    #         )
+    #       )
+    #     )
+    #     (conv2): Conv2d(64, 2, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    #   )
+    #   (period): ResComponent(
+    #     (conv1): Conv2d(2, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    #     (res_units): ModuleList(
+    #       (0-11): 12 x ResUnit(
+    #         (block): Sequential(
+    #           (0): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    #           (1): ReLU(inplace=True)
+    #           (2): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    #           (3): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    #           (4): ReLU(inplace=True)
+    #           (5): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    #         )
+    #       )
+    #     )
+    #     (conv2): Conv2d(64, 2, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    #   )
+    #   (trend): ResComponent(
+    #     (conv1): Conv2d(2, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    #     (res_units): ModuleList(
+    #       (0-11): 12 x ResUnit(
+    #         (block): Sequential(
+    #           (0): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    #           (1): ReLU(inplace=True)
+    #           (2): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    #           (3): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    #           (4): ReLU(inplace=True)
+    #           (5): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    #         )
+    #       )
+    #     )
+    #     (conv2): Conv2d(64, 2, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    #   )
+    #   (ext_feature): FeatureExt(
+    #     (feature): Sequential(
+    #       (0): Linear(in_features=28, out_features=10, bias=True)
+    #       (1): ReLU(inplace=True)
+    #       (2): Linear(in_features=10, out_features=2048, bias=True)
+    #       (3): ReLU(inplace=True)
+    #     )
+    #   )
+    # )
