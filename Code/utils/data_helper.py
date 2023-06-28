@@ -573,9 +573,15 @@ class STMatrix(object):
         return True
 
     def create_dataset(self, len_closeness=3, len_trend=3, TrendInterval=7, len_period=3, PeriodInterval=1):
-        """current version
-
         """
+        :param len_closeness:
+        :param len_trend:
+        :param TrendInterval: 趋势性的间隔天数，默认为1周，即7天
+        :param len_period:
+        :param PeriodInterval: 周期性的间隔天数，默认为1天
+        :return:
+        """
+
         # offset_week = pd.DateOffset(days=7)
         offset_frame = pd.DateOffset(minutes=24 * 60 // self.T)  # 时间偏移 minutes = 30
         XC = []
