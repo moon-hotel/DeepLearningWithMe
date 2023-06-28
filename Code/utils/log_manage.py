@@ -34,5 +34,5 @@ def logger_init(log_file_name='monitor',
 # 以下语句在执行from utils import 任何模型块之后都会被执行
 # 因为utils下__init__.py中有导入语句from .log_manage import logger_init
 # 之所以放在这里是因为tools中的process_cache函数作为修饰器使用时的特殊性，在导入它之前必须先初始化日志打印模型
-# 不然无法正常打印和输出日志信息
+# 不然无法正常打印和输出process_cache函数中的日志信息
 logger_init(log_file_name='log', log_level=logging.INFO, log_dir='./log')
