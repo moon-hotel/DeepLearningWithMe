@@ -49,7 +49,7 @@ class ModelConfig(object):
 def train(config):
     data_loader = TaxiBJ(config.T, config.nb_flow, config.len_test, config.len_closeness,
                          config.len_period, config.len_trend, batch_size=config.batch_size)
-    train_iter = data_loader.load_train_test_data(is_train=True)
+    train_iter, mmn = data_loader.load_train_test_data(is_train=True)
     model = STResNet(config)
     if os.path.exists(config.model_save_path):
         logging.info(f" # 载入模型{config.model_save_path}进行追加训练...")
@@ -65,10 +65,10 @@ def train(config):
     for epoch in range(config.epochs):
         total_loss = 0
         for i, (XC, XP, XT, Y, meta_feature, _) in enumerate(train_iter):
-            XC = XC.to(config.device)
-            XP = XP.to(config.device)
-            XT = XT.to(config.device)
-            Y = Y.to(config.device)
+            XC = XC.to(config.device)  # [batch_size, 2*len_closeness, 32,32]
+            XP = XP.to(config.device)  # [batch_size, 2*len_period, 32,32]
+            XT = XT.to(config.device)  # [batch_size, 2*len_trend, 32,32]
+            Y = Y.to(config.device)  # [batch_size, 2, 32,32]
             meta_feature = meta_feature.to(config.device)
             loss, logits = model([XC, XP, XT, meta_feature], Y)
             optimizer.zero_grad()
@@ -85,10 +85,23 @@ def train(config):
             max_train_loss = total_loss
             state_dict = deepcopy(model.state_dict())
             torch.save(state_dict, config.model_save_path)
-            inference(config)
+            rmse = evaluate(train_iter, model, config.device, mmn)
+            logging.info(f"Epochs[{epoch + 1}/{config.epochs}]--RMSE on train: {round(rmse, 4)}")
+        # inference(config)
 
 
-def evaluate(data_iter, model, device):
+def compute_rmse(all_logits=None, all_labels=None, mmn=None):
+    all_logits = torch.cat(all_logits, dim=0)  # [n,2,32,32]
+    all_labels = torch.cat(all_labels, dim=0)  # [n,2,32,32]
+    y_pred = all_logits.detach().cpu().numpy()  # [1344, 2,32,32]
+    y_true = all_labels.detach().cpu().numpy()  # [1344, 2,32,32]
+    y_pred = mmn.inverse_transform(y_pred)
+    y_true = mmn.inverse_transform(y_true)
+    rmse = np.sqrt(np.mean((y_pred - y_true) ** 2))
+    return rmse
+
+
+def evaluate(data_iter, model, device, mmn):
     model.eval()
     all_logits = []
     all_labels = []
@@ -100,12 +113,11 @@ def evaluate(data_iter, model, device):
             Y = Y.to(device)
             meta_feature_test = meta_feature_test.to(device)
             loss, logits = model([XC, XP, XT, meta_feature_test], Y)
-            all_logits.append(logits)
-            all_labels.append(Y)
+            all_logits.append(logits)  # [[batch_size,2,32,32], [batch_size,2,32,32],...]
+            all_labels.append(Y)  # [[batch_size,2,32,32], [batch_size,2,32,32],...]
         model.train()
-        all_logits = torch.cat(all_logits, dim=0)
-        all_labels = torch.cat(all_labels, dim=0)
-    return all_logits, all_labels
+        rmse = compute_rmse(all_logits, all_labels, mmn)
+    return rmse
 
 
 def inference(config):
@@ -121,13 +133,7 @@ def inference(config):
         model.load_state_dict(checkpoint)
     else:
         raise ValueError(f" # 模型{config.model_save_path}不存在！")
-
-    all_logits, all_labels = evaluate(test_iter, model, config.device)
-    y_pred = all_logits.detach().cpu().numpy()  # [1344, 2,32,32]
-    y_true = all_labels.detach().cpu().numpy()  # [1344, 2,32,32]
-    y_pred = mmn.inverse_transform(y_pred)
-    y_true = mmn.inverse_transform(y_true)
-    rmse = np.sqrt(np.mean((y_pred - y_true) ** 2))
+    rmse = evaluate(test_iter, model, config.device, mmn)
     logging.info(f" # RMSE on test: {rmse}")
 
 
