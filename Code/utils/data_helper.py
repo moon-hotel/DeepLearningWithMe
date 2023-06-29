@@ -927,16 +927,16 @@ class TaxiBJ(object):
 
     def load_train_test_data(self, is_train=False):
         data = self.data_process(file_path=self.CATH_FILE_PATH)
+        mmn = data['mmn']
         if not is_train:
             test_data = data['test_data']
-            mmn = data['mmn']
             test_iter = DataLoader(test_data, batch_size=self.batch_size, shuffle=True)
             logging.info(f" ## 测试集构建完毕，一共{len(test_data)}个样本")
             return test_iter, mmn
         train_data = data['train_data']
         train_iter = DataLoader(train_data, batch_size=self.batch_size, shuffle=self.is_sample_shuffle)
         logging.info(f" ## 训练集构建完毕，样本数量为{len(train_data)}")
-        return train_iter
+        return train_iter, mmn
 
     def show_example(self, num_id=100):
         """
