@@ -29,7 +29,7 @@ class ModelConfig(object):
         self.learning_rate = 0.001
         self.resize = 96
         self.num_classes = 10
-        self.frozen = False
+        self.frozen = False  # True 冻结， False 微调
         self.model_save_path = 'model.pt'
         self.summary_writer_dir = "runs/result"
         self.augment = True
