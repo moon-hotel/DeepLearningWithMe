@@ -12,8 +12,10 @@ from .data_helper import TangShi
 from .data_helper import process_cache
 from .data_helper import KTHData
 from .data_helper import TaxiBJ
+from .data_helper import DATA_HOME
 
 __all__ = [
+    "DATA_HOME",
     "tools",
     "process_cache",
     "logger_init",
