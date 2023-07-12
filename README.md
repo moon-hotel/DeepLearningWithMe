@@ -33,6 +33,7 @@
 - [4.4 LeNet5模型](https://mp.weixin.qq.com/s/Li6GtIxCJn6gXktcTrs6OA)
 - [4.5 AlexNet模型](https://mp.weixin.qq.com/s/5AYMTe_QttplxwFscilolA)
 - [4.6 VGG模型](https://mp.weixin.qq.com/s/zTfYYG5uhttq5doMHVfgSQ)
+- [4.7 NIN模型](https://mp.weixin.qq.com/s/Js-Sv3N7nWJbr4O5JTz8fA)
 
 ## 第 5 章 模型训练与复用
 ## 第 6 章 模型优化与泛化

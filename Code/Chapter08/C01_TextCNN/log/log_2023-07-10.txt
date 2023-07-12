@@ -1,0 +1,38 @@
+[2023-07-10 13:55:12'] - INFO: [train.py][37] ### 将当前配置打印到日志文件中 
+[2023-07-10 13:55:12'] - INFO: [train.py][39] ### batch_size = 128
+[2023-07-10 13:55:12'] - INFO: [train.py][39] ### epochs = 50
+[2023-07-10 13:55:12'] - INFO: [train.py][39] ### learning_rate = 0.005
+[2023-07-10 13:55:12'] - INFO: [train.py][39] ### num_classes = 15
+[2023-07-10 13:55:12'] - INFO: [train.py][39] ### top_k = 3000
+[2023-07-10 13:55:12'] - INFO: [train.py][39] ### window_size = [3, 4, 5]
+[2023-07-10 13:55:12'] - INFO: [train.py][39] ### embedding_size = 256
+[2023-07-10 13:55:12'] - INFO: [train.py][39] ### out_channels = 3
+[2023-07-10 13:55:12'] - INFO: [train.py][39] ### num_warmup_steps = 100
+[2023-07-10 13:55:12'] - INFO: [train.py][39] ### model_save_path = model.pt
+[2023-07-10 13:55:12'] - INFO: [train.py][39] ### summary_writer_dir = runs/model
+[2023-07-10 13:55:12'] - INFO: [train.py][39] ### device = cpu
+[2023-07-10 13:55:12'] - INFO: [data_helper.py][157]  ## 载入原始文本 toutiao_train.txt
+[2023-07-10 13:55:13'] - INFO: [data_helper.py][52]  ## 正在根据训练集构建词表……
+[2023-07-10 13:55:13'] - DEBUG: [__init__.py][113] Building prefix dict from the default dictionary ...
+[2023-07-10 13:55:13'] - DEBUG: [__init__.py][132] Loading model from cache /var/folders/49/t8nzd3v53ndgk1j0rbp6l5dr0000gn/T/jieba.cache
+[2023-07-10 13:55:16'] - DEBUG: [__init__.py][164] Loading model cost 2.705 seconds.
+[2023-07-10 13:55:16'] - DEBUG: [__init__.py][166] Prefix dict has been built successfully.
+[2023-07-10 13:55:32'] - INFO: [train.py][37] ### 将当前配置打印到日志文件中 
+[2023-07-10 13:55:32'] - INFO: [train.py][39] ### batch_size = 128
+[2023-07-10 13:55:32'] - INFO: [train.py][39] ### epochs = 50
+[2023-07-10 13:55:32'] - INFO: [train.py][39] ### learning_rate = 0.005
+[2023-07-10 13:55:32'] - INFO: [train.py][39] ### num_classes = 15
+[2023-07-10 13:55:32'] - INFO: [train.py][39] ### top_k = 3000
+[2023-07-10 13:55:32'] - INFO: [train.py][39] ### window_size = [3, 4, 5]
+[2023-07-10 13:55:32'] - INFO: [train.py][39] ### embedding_size = 256
+[2023-07-10 13:55:32'] - INFO: [train.py][39] ### out_channels = 3
+[2023-07-10 13:55:32'] - INFO: [train.py][39] ### num_warmup_steps = 100
+[2023-07-10 13:55:32'] - INFO: [train.py][39] ### model_save_path = model.pt
+[2023-07-10 13:55:32'] - INFO: [train.py][39] ### summary_writer_dir = runs/model
+[2023-07-10 13:55:32'] - INFO: [train.py][39] ### device = cpu
+[2023-07-10 13:55:32'] - INFO: [data_helper.py][157]  ## 载入原始文本 toutiao_train.txt
+[2023-07-10 13:55:33'] - INFO: [data_helper.py][52]  ## 正在根据训练集构建词表……
+[2023-07-10 13:55:33'] - DEBUG: [__init__.py][113] Building prefix dict from the default dictionary ...
+[2023-07-10 13:55:33'] - DEBUG: [__init__.py][132] Loading model from cache /var/folders/49/t8nzd3v53ndgk1j0rbp6l5dr0000gn/T/jieba.cache
+[2023-07-10 13:55:36'] - DEBUG: [__init__.py][164] Loading model cost 2.779 seconds.
+[2023-07-10 13:55:36'] - DEBUG: [__init__.py][166] Prefix dict has been built successfully.
