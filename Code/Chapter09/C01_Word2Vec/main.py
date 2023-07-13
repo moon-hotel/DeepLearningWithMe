@@ -60,7 +60,9 @@ def load_third_part_wv_zh():
     path_to_model = os.path.join(DATA_HOME, 'Pretrained', 'sgns.renmin.word.bz2')
     model = KeyedVectors.load_word2vec_format(path_to_model, binary=False)
     vec_china = model['中国']
-    logging.info(f"中国: {vec_china}")  #
+    logging.info(f"中国: {vec_china}")  # [0.0266010  0.238758 0.0367000 -0.173718 -0.145088  0.114146...
+    sim_words = model.most_similar(['上海市'], topn=5)
+    logging.info(f"与上海市最相似的前5个词为:{sim_words}")
 
 
 if __name__ == '__main__':
