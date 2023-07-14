@@ -22,7 +22,9 @@ from PIL import Image
 from torch.utils.data import DataLoader
 from collections import Counter
 import matplotlib.pyplot as plt
+import unicodedata
 import pandas as pd
+from gensim import utils
 from .tools import process_cache
 from .tools import MinMaxNormalization
 from .tools import timestamp2vec
@@ -948,3 +950,56 @@ class TaxiBJ(object):
         plt.imshow(data[num_id][1], cmap='RdYlGn_r', interpolation='nearest')
         plt.colorbar()
         plt.show()
+
+
+class SougoNews(object):
+    DATA_DIR = os.path.join(DATA_HOME, 'SougoNews')
+    PROCESSED_FILE_PATH = os.path.join(DATA_DIR, 'SougoNews.txt')
+
+    def __init__(self, ):
+        pass
+
+    def data_process(self, ):
+        dir_lists = os.listdir(self.DATA_DIR)  # 列出当前文件夹中的所有文件夹
+        num_file = 0
+        num_failed = 0
+        new_file = open(self.PROCESSED_FILE_PATH, 'w', encoding='utf-8')
+        for dir in dir_lists:
+            dir_name = os.path.join(self.DATA_DIR, dir)  # 构造得到每个目录的路径
+            file_lists = os.listdir(dir_name)
+            for file in file_lists:
+                file_path = os.path.join(dir_name, file)
+                logging.info(f" ## 正在读取第{num_file + 1}个文件：{file_path}")
+                num_file += 1
+                result = []
+                try:
+                    with open(file_path, 'r', encoding='gbk') as f:
+                        for line in f:
+                            line = line.strip().replace('&nbsp', '')
+                            if len(line) < 30:
+                                continue
+                            line = unicodedata.normalize('NFKC', line)  # 将全角字符转换为半角字符
+                            seg = tokenize(line, cut_words=True)
+                            result += seg
+                except:
+                    num_failed += 1
+                new_file.write(" ".join(result) + '\n')
+        new_file.close()
+        logging.info(f"一共读取文件个数为: {num_file}, 读取失败个数为: {num_failed}")
+
+
+class MyCorpus(SougoNews):
+    """An iterator that yields sentences (lists of str)."""
+
+    def __iter__(self):
+        corpus_path = self.PROCESSED_FILE_PATH
+        if not os.path.exists(corpus_path):
+            logging.info(f" ## 预处理文件{self.PROCESSED_FILE_PATH}不存在，即将重新读取文件生成！")
+            for i in range(5, 1, -1):
+                logging.info(f"Countdown: {i}s")
+                time.sleep(1)
+            self.data_process()
+        logging.info(f" ## 读取预处理文件进行训练: {self.PROCESSED_FILE_PATH}")
+        for line in open(corpus_path):
+            # assume there's one document per line, tokens separated by whitespace
+            yield utils.simple_preprocess(line)
