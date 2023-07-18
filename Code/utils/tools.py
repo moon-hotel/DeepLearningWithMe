@@ -13,6 +13,12 @@ import os
 import numpy as np
 from datetime import datetime
 import pandas as pd
+import re
+
+
+def contains_chinese(text):
+    pattern = re.compile(r'[\u4e00-\u9fff]')  # 匹配中文字符的正则表达式
+    return bool(re.search(pattern, text))
 
 
 def get_gpus(num=None):
