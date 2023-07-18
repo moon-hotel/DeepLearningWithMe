@@ -29,6 +29,7 @@ from .tools import process_cache
 from .tools import MinMaxNormalization
 from .tools import timestamp2vec
 from .tools import string2timestamp
+from .tools import contains_chinese
 
 PROJECT_HOME = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_HOME = os.path.join(PROJECT_HOME, 'data')
@@ -84,9 +85,12 @@ def tokenize(text, cut_words=False):
     :return:
     words: 字粒度： ['上', '联', '：', '一', '夜', '春', '风', '去', '，', '怎', '么', '对', '下', '联', '？']
     """
-    if cut_words:
-        text = jieba.cut(text)  # 词粒度
-    words = " ".join(text).split()
+
+    if contains_chinese(text):  # 中文
+        if cut_words:  # 分词
+            text = jieba.cut(text)  # 词粒度
+        text = " ".join(text)  # 不分词则是字粒度
+    words = text.split()
     return words
 
 
@@ -146,6 +150,9 @@ class TouTiaoNews(object):
         self.max_sen_len = max_sen_len
         self.batch_size = batch_size
         self.is_sample_shuffle = is_sample_shuffle
+
+    def get_vocab(self):
+        return self.vocab.stoi
 
     @staticmethod
     def load_raw_data(file_path=None):
@@ -234,11 +241,15 @@ class TangShi(TouTiaoNews):
         self.cut_words = False
 
     def load_raw_data(self, file_path=None):
+        """
+        :param file_path:
+        :return:
+        """
 
-        def read_json_data(file_path):
-            logging.info(f" ## 载入原始文本 {file_path.split(os.path.sep)[-1]}")
+        def read_json_data(path):
+            logging.info(f" ## 载入原始文本 {path.split(os.path.sep)[-1]}")
             samples, labels = [], []
-            with open(file_path, encoding='utf-8') as f:
+            with open(path, encoding='utf-8') as f:
                 data = json.loads(f.read())
                 # [{'author': '范成大', 'paragraphs': ['日滿東窗照被堆，宿湯猶自暖如煨。', '尺三汗脚君休笑，曾踏鞾霜待漏來。'], 'title': '戲贈脚婆',...},
                 # {'author': '范成大', 'paragraphs': ['雪不成花夜雨來，壠頭一洗定無埃。', '小童却怕溪橋滑，明日先生合探梅。'], 'title': '除夜前二日夜雨', ...},
@@ -387,6 +398,17 @@ class TangShi(TouTiaoNews):
                 i += 1
         true_result = "\n".join(true_result)
         return true_result
+
+
+class MR(TouTiaoNews):
+    DATA_DIR = os.path.join(DATA_HOME, 'MR')
+    FILE_PATH = [os.path.join(DATA_DIR, 'rt_train.txt'),
+                 os.path.join(DATA_DIR, 'rt_val.txt'),
+                 os.path.join(DATA_DIR, 'rt_test.txt')]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        pass
 
 
 class KTHData(object):

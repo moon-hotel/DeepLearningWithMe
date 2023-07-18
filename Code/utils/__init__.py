@@ -15,6 +15,7 @@ from .data_helper import TaxiBJ
 from .data_helper import DATA_HOME
 from .data_helper import SougoNews
 from .data_helper import MyCorpus
+from .data_helper import MR
 
 __all__ = [
     "DATA_HOME",
@@ -27,5 +28,6 @@ __all__ = [
     "KTHData",
     "TaxiBJ",
     "SougoNews",
-    "MyCorpus"
+    "MyCorpus",
+    "MR"
 ]
