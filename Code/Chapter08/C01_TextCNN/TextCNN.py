@@ -56,6 +56,6 @@ if __name__ == '__main__':
     x = torch.tensor([[1, 2, 3, 2, 0, 1],
                       [2, 2, 2, 1, 3, 1]])
     labels = torch.tensor([0, 3])
-    model = TextCNN(vocab_size=5, embedding_size=3, fc_hidden_size=6)
+    model = TextCNN(vocab_size=5, embedding_size=3)
     loss, logits = model(x, labels)
     print(loss, logits)
