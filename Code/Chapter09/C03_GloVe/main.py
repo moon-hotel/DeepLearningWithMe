@@ -1,3 +1,11 @@
+"""
+文件名: Code/Chapter09/C03_GloVe/main.py
+创建时间: 2023/7/17 19:54 下午
+作 者: @空字符
+公众号: @月来客栈
+知 乎: @月来客栈 https://www.zhihu.com/people/the_lastest
+"""
+
 from gensim.scripts.glove2word2vec import glove2word2vec
 from gensim.models import KeyedVectors
 import logging
