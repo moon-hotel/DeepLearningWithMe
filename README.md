@@ -34,9 +34,29 @@
 - [4.5 AlexNet模型](https://mp.weixin.qq.com/s/5AYMTe_QttplxwFscilolA)
 - [4.6 VGG模型](https://mp.weixin.qq.com/s/zTfYYG5uhttq5doMHVfgSQ)
 - [4.7 NIN模型](https://mp.weixin.qq.com/s/Js-Sv3N7nWJbr4O5JTz8fA)
-
+- [4.8 GoogLeNet模型](https://mp.weixin.qq.com/s/KCg2GSSIiQltw9B_Zn7r8A)
+- 4.9 ResNet模型
+- 4.10 DenseNet模型
 ## 第 5 章 模型训练与复用
+- 5.1 参数及日志管理
+- 5.2 模型训练可视化
+- 5.3 模型保存与复用
+- 5.4 模型的迁移学习
+- 5.5 开源模型复用
+- 5.6 多GPU训练
+- 5.7 数据预处理缓存
 ## 第 6 章 模型优化与泛化
+- 6.1 学习率动态调整
+- 6.2 梯度裁剪
+- 6.3 标签平滑
+- 6.4 批归一化
+- 6.5 层归一化
+- 6.6 组归一化
+- 6.7 动量法
+- 6.8 Adam算法
+- 6.9 AdaDelta算法
+- 6.10 AdaGrad算法
+- 6.11 RMSprop算法
 ## 第 7 章 循环神经网络
 ## 第 8 章 时序任务与模型融合
 ## 第 9 章 自然语言处理
