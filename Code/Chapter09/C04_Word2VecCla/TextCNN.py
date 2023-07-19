@@ -31,7 +31,7 @@ class TextCNN(nn.Module):
         self.out_channels = out_channels
         self.num_classes = num_classes
         self.random_embedding = nn.Embedding(self.vocab_size, self.embedding_size)
-        self.glove_embedding = get_glove_embedding(vocab, self.embedding_size)
+        self.glove_embedding = get_glove_embedding(self.vocab, self.embedding_size)
         self.convs = nn.ModuleList([nn.Conv2d(2, out_channels, kernel_size=(k, embedding_size)) for k in window_size])
         self.max_pool = nn.AdaptiveMaxPool2d((1, 1))
         self.classifier = nn.Sequential(nn.Linear(len(self.window_size) * self.out_channels, self.num_classes))

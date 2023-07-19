@@ -406,10 +406,6 @@ class MR(TouTiaoNews):
                  os.path.join(DATA_DIR, 'rt_val.txt'),
                  os.path.join(DATA_DIR, 'rt_test.txt')]
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        pass
-
 
 class KTHData(object):
     """

@@ -1,3 +1,10 @@
+"""
+文件名: Code/data/MR/format.py
+创建时间: 2023/7/18 22:11 下午
+作 者: @空字符
+公众号: @月来客栈
+知 乎: @月来客栈 https://www.zhihu.com/people/the_lastest
+"""
 from sklearn.model_selection import train_test_split
 
 
