@@ -975,7 +975,16 @@ class SougoNews(object):
     PROCESSED_FILE_PATH = os.path.join(DATA_DIR, 'SougoNews.txt')
 
     def __init__(self, ):
-        pass
+        self.make_corpus()
+
+    def make_corpus(self):
+        self.corpus_path = self.PROCESSED_FILE_PATH
+        if not os.path.exists(self.PROCESSED_FILE_PATH):
+            logging.info(f" ## 预处理文件{self.PROCESSED_FILE_PATH}不存在，即将重新读取文件生成！")
+            for i in range(5, 1, -1):
+                logging.info(f"Countdown: {i}s")
+                time.sleep(1)
+            self.data_process()
 
     def data_process(self, ):
         dir_lists = os.listdir(self.DATA_DIR)  # 列出当前文件夹中的所有文件夹
@@ -985,9 +994,10 @@ class SougoNews(object):
         for dir in dir_lists:
             dir_name = os.path.join(self.DATA_DIR, dir)  # 构造得到每个目录的路径
             file_lists = os.listdir(dir_name)
-            for file in file_lists:
+            logging.info(f" ## 正在读取文件夹【{dir_name}】中的文件")
+            for file in tqdm(file_lists):
                 file_path = os.path.join(dir_name, file)
-                logging.info(f" ## 正在读取第{num_file + 1}个文件：{file_path}")
+                logging.debug(f" ## 正在读取第{num_file + 1}个文件：{file_path}")
                 num_file += 1
                 result = []
                 try:
@@ -1009,15 +1019,12 @@ class SougoNews(object):
 class MyCorpus(SougoNews):
     """An iterator that yields sentences (lists of str)."""
 
+    def __init__(self):
+        super(MyCorpus, self).__init__()
+        pass
+
     def __iter__(self):
-        corpus_path = self.PROCESSED_FILE_PATH
-        if not os.path.exists(corpus_path):
-            logging.info(f" ## 预处理文件{self.PROCESSED_FILE_PATH}不存在，即将重新读取文件生成！")
-            for i in range(5, 1, -1):
-                logging.info(f"Countdown: {i}s")
-                time.sleep(1)
-            self.data_process()
         logging.info(f" ## 读取预处理文件进行训练: {self.PROCESSED_FILE_PATH}")
-        for line in open(corpus_path):
+        for line in open(self.corpus_path):
             # assume there's one document per line, tokens separated by whitespace
             yield utils.simple_preprocess(line)
