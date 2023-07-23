@@ -16,6 +16,7 @@ from .data_helper import DATA_HOME
 from .data_helper import SougoNews
 from .data_helper import MyCorpus
 from .data_helper import MR
+from .data_helper import tokenize
 
 __all__ = [
     "DATA_HOME",
@@ -29,5 +30,6 @@ __all__ = [
     "TaxiBJ",
     "SougoNews",
     "MyCorpus",
-    "MR"
+    "MR",
+    "tokenize"
 ]
