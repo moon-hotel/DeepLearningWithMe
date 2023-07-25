@@ -16,7 +16,6 @@ import fasttext
 class ModelConfig(object):
     def __init__(self):
         self.epochs = 2
-        self.word_ngrams = 3
         self.model = 'cbow'  # skipgram
         self.learning_rate = 5e-3
         self.vector_size = 50
