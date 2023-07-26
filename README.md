@@ -35,7 +35,7 @@
 - [4.6 VGG模型](https://mp.weixin.qq.com/s/zTfYYG5uhttq5doMHVfgSQ)
 - [4.7 NIN模型](https://mp.weixin.qq.com/s/Js-Sv3N7nWJbr4O5JTz8fA)
 - [4.8 GoogLeNet模型](https://mp.weixin.qq.com/s/KCg2GSSIiQltw9B_Zn7r8A)
-- 4.9 ResNet模型
+- [4.9 ResNet模型](https://mp.weixin.qq.com/s/-J5fXRUm8EFrX5mw3AEv1Q)
 - 4.10 DenseNet模型
 ## 第 5 章 模型训练与复用
 - 5.1 参数及日志管理
