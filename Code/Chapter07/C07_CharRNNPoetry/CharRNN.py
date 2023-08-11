@@ -37,7 +37,7 @@ class CharRNN(nn.Module):
         self.PAD_IDX = PAD_IDX
         self.token_embedding = nn.Embedding(self.vocab_size, self.embedding_size)
         self.rnn = rnn_cell(self.embedding_size, self.hidden_size,
-                            num_layers=self.num_layers,batch_first=True)
+                            num_layers=self.num_layers, batch_first=True)
         self.classifier = nn.Sequential(nn.LayerNorm(self.hidden_size),
                                         nn.Linear(self.hidden_size, self.hidden_size),
                                         nn.ReLU(inplace=True),
@@ -53,8 +53,8 @@ class CharRNN(nn.Module):
         x, _ = self.rnn(x)  # [batch_size, src_len, hidden_size]
         logits = self.classifier(x)  # [batch_size, src_len, vocab_size]
         if labels is not None:
-            loss_fct = nn.CrossEntropyLoss(reduction='mean', ignore_index=self.PAD_IDX)
-            loss = loss_fct(logits.reshape(-1, self.vocab_size), labels.reshape(-1))
+            loss_fct = nn.CrossEntropyLoss(reduction='sum', ignore_index=self.PAD_IDX)
+            loss = loss_fct(logits.reshape(-1, self.vocab_size), labels.reshape(-1)) / x.shape[0]
             return loss, logits
         else:
             return logits
