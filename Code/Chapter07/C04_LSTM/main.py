@@ -20,9 +20,9 @@ def test_LSTM():
     x = torch.rand([batch_size, time_step, input_size])  # [batch_size, time_step, input_size]
     lstm = nn.LSTM(input_size, hidden_size, num_layers=2, batch_first=True)
     output, (hn, cn) = lstm(x)
-    print(output)
-    print(hn)
-    print(cn)
+    print(output)  # [batch_size, time_step, hidden_size]
+    print(hn)  # [num_layer, batch_size, hidden_size]
+    print(cn)  # [num_layer, batch_size, hidden_size]
 
 
 if __name__ == '__main__':
