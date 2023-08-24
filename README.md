@@ -39,8 +39,8 @@
 - [4.10 DenseNet模型](https://mp.weixin.qq.com/s/ei8yFfXL2cpms2SlssiReA)
 ## 第 5 章 模型训练与复用
 - [5.1 参数及日志管理](https://mp.weixin.qq.com/s/JXGyKz7q5OCBTVbQg2zY5g)
-- 5.2 模型训练可视化
-- 5.3 模型保存与复用
+- [5.2 模型训练可视化](https://mp.weixin.qq.com/s/LAQGtKLvD3x8QZCfiMZ08A)
+- [5.3 模型保存与复用](https://mp.weixin.qq.com/s/mxwg9NN3RBFktiLIs3LGYA)
 - 5.4 模型的迁移学习
 - 5.5 开源模型复用
 - 5.6 多GPU训练
