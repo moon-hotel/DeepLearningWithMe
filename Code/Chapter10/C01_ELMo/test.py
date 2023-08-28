@@ -12,7 +12,7 @@ class ModelConfig(object):
         self.max_characters_per_token = 50
         self.char_cnn_filters = [[1, 32], [2, 32], [3, 64],
                                  [4, 128], [5, 256], [6, 512], [7, 1024]]
-        self.n_filters = sum(f[1] for f in self.char_cnn_filters)
+        self.n_filters = sum(f[1] for f in self.char_cnn_filters) # 2048
         self.projection_dim = 512
         self.n_layers = 2
 

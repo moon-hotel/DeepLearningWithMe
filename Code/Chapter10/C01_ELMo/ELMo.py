@@ -107,7 +107,6 @@ class ELMoBiLSTM(nn.Module):
 class ELMo(nn.Module):
     def __init__(self, config=None, rep_weights=None):
         """
-
         :param config:
         :param rep_weight: 每一层的特征表示的权重，list长度必须为 config.n_layers + 1
         """
@@ -125,7 +124,7 @@ class ELMo(nn.Module):
 
     def forward(self, x):
         """
-
+        需要把每个单词按字符进行tokenize
         :param x: [batch_size, seq_len, max_chars_per_token]
         :return:
         """
