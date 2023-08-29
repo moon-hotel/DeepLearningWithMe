@@ -20,6 +20,27 @@ class ModelConfig(object):
         self.n_filters = sum(f[1] for f in self.char_cnn_filters)
         self.projection_dim = 512
         self.n_layers = 2
+        self.n_highway = 2
+
+
+class HighWay(nn.Module):
+    def __init__(self, config=None):
+        super().__init__()
+        self.highway = nn.Linear(config.n_filters, config.n_filters * 2)
+        self.relu = nn.ReLU()
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, hidden_state):
+        """
+        :param hidden_state:  [batch_size, hidden_size]
+        :return: [batch_size, hidden_size]
+        """
+        highway = self.highway(hidden_state)  # 分别计算后面的非线性部分和门 [batch_size * seq_len, n_filters*2]
+        nonlinear_part, gate = highway.chunk(2, dim=-1)  # 两部分的形状均为 [batch_size * seq_len, n_filters]
+        nonlinear_part = self.relu(nonlinear_part)  # [batch_size * seq_len, n_filters]
+        gate = self.sigmoid(gate)  # [batch_size * seq_len, n_filters]
+        hidden_state = gate * hidden_state + (1 - gate) * nonlinear_part
+        return hidden_state
 
 
 class ELMoCharacterCNN(nn.Module):
@@ -38,7 +59,7 @@ class ELMoCharacterCNN(nn.Module):
             conv.append(nn.Conv1d(in_channels=config.char_embed_dim,
                                   out_channels=num, kernel_size=width, bias=True))
         self.char_conv = nn.ModuleList(conv)
-        self.highway = nn.Linear(config.n_filters, config.n_filters * 2)
+        self.highway = nn.ModuleList([HighWay(config) for _ in range(config.n_highway)])
         self.projection = nn.Linear(config.n_filters, config.projection_dim)
 
     def forward(self, x):
@@ -56,14 +77,10 @@ class ELMoCharacterCNN(nn.Module):
             convolved, _ = torch.max(convolved, dim=-1)  # 在最后一个维度，即特征通道这个维度上取最大池化，
             convolved = F.relu(convolved)  # [batch_size*seq_len, n_filters_of_each_cnn]
             convs.append(convolved)
-        # Highway
         token_embedding = torch.cat(convs, dim=-1)  # linear_part, [batch_size * seq_len, n_filters]
-        highway = self.highway(token_embedding)  # 分别计算后面的非线性部分和门 [batch_size * seq_len, n_filters*2]
-        nonlinear_part, gate = highway.chunk(2, dim=-1)  # 两部分的形状均为 [batch_size * seq_len, n_filters]
-        nonlinear_part = F.relu(nonlinear_part)  # [batch_size * seq_len, n_filters]
-        gate = torch.sigmoid(gate)  # [batch_size * seq_len, n_filters]
-        token_embedding = gate * token_embedding + (1 - gate) * nonlinear_part
-        # [batch_size * seq_len, n_filters]
+        # Highway
+        for highway in self.highway:
+            token_embedding = highway(token_embedding)  # [batch_size * seq_len, n_filters]
         token_embedding = self.projection(token_embedding)  # [batch_size * seq_len, projection_dim]
         token_embedding = token_embedding.view(-1, seq_len, self.config.projection_dim)
         return token_embedding  # [batch_size, seq_len, projection_dim]
@@ -104,7 +121,38 @@ class ELMoBiLSTM(nn.Module):
         return outputs
 
 
-class ELMo(nn.Module):
+class ELMoLM(nn.Module):
+    def __init__(self, config=None):
+        """
+        :param config:
+        """
+        super().__init__()
+        self.config = config
+        self.char_cnn = ELMoCharacterCNN(config)
+        self.lstm = ELMoBiLSTM(config)
+        self.classifier = nn.Linear(config.projection_dim, config.vocab_size)
+
+    def forward(self, x, labels=None):
+        """
+        需要把每个单词按字符进行tokenize
+        :param x: [batch_size, seq_len, max_chars_per_token]
+        :param labels: [batch_size, seq_len]
+        :return:
+        """
+        char_embedding = self.char_cnn(x)  # # [batch_size, seq_len, projection_dim]
+        outputs = self.lstm(char_embedding)[-1]  # 只取最后一层的输出
+        f_logits = outputs[:, :, :self.config.projection_dim]  # [batch_size, seq_len, projection_dim]
+        f_logits = self.classifier(f_logits)  # [batch_size, seq_len, vocab_size]
+        b_logits = outputs[:, :, -self.config.projection_dim:]  # [batch_size, seq_len, projection_dim]
+        b_logits = self.classifier(b_logits)  # [batch_size, seq_len, vocab_size]
+        fn_loss = nn.CrossEntropyLoss(reduction='sum', ignore_index=-1)
+        f_loss = fn_loss(f_logits.reshape(-1, self.config.vocab_size), labels.reshape(-1)) / x.shape[0]
+        b_loss = fn_loss(b_logits.reshape(-1, self.config.vocab_size), labels.flip(1).reshape(-1)) / x.shape[0]
+        total_loss = f_loss + b_loss
+        return total_loss
+
+
+class ELMoRepresentation(nn.Module):
     def __init__(self, config=None, rep_weights=None):
         """
         :param config:
