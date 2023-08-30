@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import logging
 
 
@@ -59,6 +58,7 @@ class ELMoCharacterCNN(nn.Module):
             conv.append(nn.Conv1d(in_channels=config.char_embed_dim,
                                   out_channels=num, kernel_size=width, bias=True))
         self.char_conv = nn.ModuleList(conv)
+        self.relu = nn.ReLU()
         self.highway = nn.ModuleList([HighWay(config) for _ in range(config.n_highway)])
         self.projection = nn.Linear(config.n_filters, config.projection_dim)
 
@@ -75,14 +75,14 @@ class ELMoCharacterCNN(nn.Module):
         for conv in self.char_conv:
             convolved = conv(x)  # [batch_size*seq_len, n_filters_of_each_cnn, max_chars_per_token - width + 1]
             convolved, _ = torch.max(convolved, dim=-1)  # 在最后一个维度，即特征通道这个维度上取最大池化，
-            convolved = F.relu(convolved)  # [batch_size*seq_len, n_filters_of_each_cnn]
+            convolved = self.relu(convolved)  # [batch_size*seq_len, n_filters_of_each_cnn]
             convs.append(convolved)
         token_embedding = torch.cat(convs, dim=-1)  # linear_part, [batch_size * seq_len, n_filters]
         # Highway
         for highway in self.highway:
             token_embedding = highway(token_embedding)  # [batch_size * seq_len, n_filters]
         token_embedding = self.projection(token_embedding)  # [batch_size * seq_len, projection_dim]
-        token_embedding = token_embedding.view(-1, seq_len, self.config.projection_dim)
+        token_embedding = token_embedding.reshape(-1, seq_len, self.config.projection_dim)
         return token_embedding  # [batch_size, seq_len, projection_dim]
 
 
