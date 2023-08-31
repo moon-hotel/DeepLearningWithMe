@@ -9,9 +9,7 @@ import json
 import os
 import torch
 import logging
-import opencc
 import jieba
-import cv2
 import h5py
 import time
 
@@ -344,6 +342,7 @@ class TangShi(TouTiaoNews):
         :param type: t2s 繁体转简体， s2t简体转繁体
         :return:
         """
+        import opencc
         if type not in ['t2s', 's2t']:
             raise ValueError(" ## 转换类型必须为 't2s' or 's2t'")
         converter = opencc.OpenCC(type)  # 使用t2s.json配置文件进行繁->简转换
@@ -407,6 +406,42 @@ class MR(TouTiaoNews):
                  os.path.join(DATA_DIR, 'rt_test.txt')]
 
 
+class MR4ELMo(TouTiaoNews):
+    DATA_DIR = os.path.join(DATA_HOME, 'MR')
+    FILE_PATH = [os.path.join(DATA_DIR, 'rt_train.txt'),
+                 os.path.join(DATA_DIR, 'rt_val.txt'),
+                 os.path.join(DATA_DIR, 'rt_test.txt')]
+
+    def __init__(self, batch_size=32, is_sample_shuffle=True):
+        self.batch_size = batch_size
+        self.is_sample_shuffle = is_sample_shuffle
+
+    def data_process(self, file_path=None):
+        samples, labels = self.load_raw_data(file_path)
+        data = []
+        logging.info(f" ## 处理原始文本 {file_path.split(os.path.sep)[-1]}")
+        for i in tqdm(range(len(samples)), ncols=80):
+            logging.debug(f" ## 原始输入样本为: {samples[i]}")
+            data.append((samples[i].split(), labels[i]))
+        return data
+
+    def generate_batch(self, data_batch):
+        """
+        以小批量为单位对序列进行padding
+        :param data_batch:
+        :return:
+        """
+        from allennlp.modules.elmo import batch_to_ids
+        batch_sentence, batch_label = [], []
+        for (sen, label) in data_batch:  # 开始对一个batch中的每一个样本进行处理。
+            batch_sentence.append(sen)
+            l = torch.tensor(int(label), dtype=torch.long)
+            batch_label.append(l)
+        batch_sentence = batch_to_ids(batch_sentence)
+        batch_label = torch.tensor(batch_label, dtype=torch.long)
+        return batch_sentence, batch_label
+
+
 class KTHData(object):
     """
     载入KTH数据集，下载地址：https://www.csc.kth.se/cvap/actions/ 一共包含6个zip压缩包
@@ -436,6 +471,7 @@ class KTHData(object):
         :param path:
         :return:
         """
+        import cv2
         logging.info(f" ## 正在读取原始文件: {path}并划分数据")
         video = cv2.VideoCapture(path)
         frames = []
