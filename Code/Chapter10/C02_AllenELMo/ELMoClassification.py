@@ -1,21 +1,30 @@
+"""
+文件名: Code/Chapter10/C02_AllenELMo/ELMoClassification.py
+创建时间: 2023/08/31 20:06 下午
+作 者: @空字符
+公众号: @月来客栈
+知 乎: @月来客栈 https://www.zhihu.com/people/the_lastest
+"""
+
 import torch
 import torch.nn as nn
 from allennlp.modules.token_embedders import ElmoTokenEmbedder
 
 
 class ELMoClassification(nn.Module):
-    def __init__(self, num_classes=10, freeze=True):
+    def __init__(self, num_classes=10, freeze=True, rep_weights=None):
         super().__init__()
-        self.elmo_rep = ElmoTokenEmbedder(requires_grad=not freeze)
+        self.elmo_rep = ElmoTokenEmbedder(requires_grad=not freeze,
+                                          scalar_mix_parameters=rep_weights)
         self.classifier = nn.Linear(1024, num_classes)
 
     def forward(self, x, labels=None):
         """
-        :param x: [batch_size, src_len]
+        :param x: [batch_size, seq_len, 50]
         :param labels: [batch_size]
         :return:
         """
-        features = self.elmo_rep(x)[:, 0]
+        features = torch.mean(self.elmo_rep(x), dim=1)
         # [batch_size, seq_len, 1024] ==> [batch_size, 1024]
         logits = self.classifier(features)  # [batch_size, num_classes]
         if labels is not None:
@@ -34,4 +43,4 @@ if __name__ == '__main__':
     print(logits.shape)
     print(loss)
     for (name, param) in model.named_parameters():
-        print(param.requires_grad)
+        print(name, '=', param.requires_grad)

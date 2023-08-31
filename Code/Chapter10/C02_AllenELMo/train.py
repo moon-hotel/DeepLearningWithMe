@@ -1,5 +1,5 @@
 """
-文件名: Code/Chapter10/C02_AllenELMo/ELMoClassification.py
+文件名: Code/Chapter10/C02_AllenELMo/train.py
 创建时间: 2023/08/31 20:06 下午
 作 者: @空字符
 公众号: @月来客栈
