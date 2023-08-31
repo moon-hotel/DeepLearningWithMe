@@ -1,3 +1,10 @@
+"""
+文件名: Code/Chapter10/C01_ELMo/ELMo.py
+创建时间: 2023/8/27 10:09
+作 者: @空字符
+公众号: @月来客栈
+知 乎: @月来客栈 https://www.zhihu.com/people/the_lastest
+"""
 from ELMo import ELMoCharacterCNN
 from ELMo import ELMoBiLSTM
 from ELMo import ELMoRepresentation
@@ -18,6 +25,9 @@ class ModelConfig(object):
         self.n_layers = 2
         self.n_highway = 2
         self.vocab_size = 800
+        self.charcnn_model = 'charcnn_model.pt'
+        self.elmo_bilstm_model = 'elmo_bilstm_model.pt'
+        self.freeze = False
 
 
 def test_ELMoCharacterCNN():
@@ -25,6 +35,7 @@ def test_ELMoCharacterCNN():
     model = ELMoCharacterCNN(config)
     token_ids = torch.randint(0, 100, [2, 6, 50])
     print(model(token_ids).shape)  # [batch_size, seq_len, projection_dim]
+    torch.save(model.state_dict(), "charcnn_model.pt")
 
 
 def test_ELMoBiLSTM():
@@ -34,6 +45,20 @@ def test_ELMoBiLSTM():
     for i in range(config.n_layers + 1):
         print("layer: ", i, model(token_embedding)[i].shape)
         # ([batch_size, seq_len, projection_dim])
+    torch.save(model.state_dict(), "elmo_bilstm_model.pt")
+
+
+def test_ELMoLM():
+    config = ModelConfig()
+    token_ids = torch.randint(0, 100, [2, 6, 50])
+    y = torch.randint(0, config.vocab_size, [2, 6])
+    # model = ELMoLM(config)
+    # torch.save(model.state_dict(), "model.pt")
+    model = ELMoLM.from_pretrained(config, "elmolm_model.pt", freeze=True)
+    for (name, param) in model.named_parameters():
+        print(param.requires_grad)
+    loss = model(token_ids, y)
+    print(loss)
 
 
 def test_ELMoRepresentation():
@@ -45,17 +70,8 @@ def test_ELMoRepresentation():
     print(elmo_rep.shape)  # [batch_size, seq_len, projection_dim*2]
 
 
-def test_ELMoLM():
-    config = ModelConfig()
-    token_ids = torch.randint(0, 100, [2, 6, 50])
-    y = torch.randint(0, config.vocab_size, [2, 6])
-    model = ELMoLM(config)
-    loss = model(token_ids, y)
-    print(loss)
-
-
 if __name__ == '__main__':
-    # test_ELMoCharacterCNN()
-    # test_ELMoBiLSTM()
-    # test_ELMoRepresentation()
-    test_ELMoLM()
+    test_ELMoCharacterCNN()
+    test_ELMoBiLSTM()
+    # test_ELMoLM()
+    test_ELMoRepresentation()

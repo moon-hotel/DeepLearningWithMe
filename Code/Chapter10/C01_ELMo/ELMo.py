@@ -1,6 +1,14 @@
+"""
+文件名: Code/Chapter10/C01_ELMo/ELMo.py
+创建时间: 2023/8/26 21:16 下午
+作 者: @空字符
+公众号: @月来客栈
+知 乎: @月来客栈 https://www.zhihu.com/people/the_lastest
+"""
 import torch
 import torch.nn as nn
 import logging
+import os
 
 
 # {"lstm": {"use_skip_connections": true, "projection_dim": 512, "cell_clip": 3, "proj_clip": 3, "dim": 4096,
@@ -42,7 +50,28 @@ class HighWay(nn.Module):
         return hidden_state
 
 
-class ELMoCharacterCNN(nn.Module):
+class PretrainedModel(nn.Module):
+    def __init__(self, ):
+        super(PretrainedModel, self).__init__()
+        pass
+
+    @classmethod
+    def from_pretrained(cls, config=None, pretrained_model_path=None):
+        model = cls(config)
+        if not os.path.exists(pretrained_model_path):
+            raise ValueError(f"模型{pretrained_model_path}不存在")
+        loaded_paras = torch.load(pretrained_model_path)
+        model.load_state_dict(loaded_paras)
+        print(f"成功载入预训练模型{pretrained_model_path}")
+        if config.freeze:
+            for (name, param) in model.named_parameters():
+                # logging.info(f"冻结参数{name}")
+                print(f"冻结参数{name}")
+                param.requires_grad = False
+        return model
+
+
+class ELMoCharacterCNN(PretrainedModel):
     """
     ELMo Character CNN  得到每个单词的token embedding
     """
@@ -86,7 +115,7 @@ class ELMoCharacterCNN(nn.Module):
         return token_embedding  # [batch_size, seq_len, projection_dim]
 
 
-class ELMoBiLSTM(nn.Module):
+class ELMoBiLSTM(PretrainedModel):
     def __init__(self, config=None):
         super().__init__()
         self.config = config
@@ -105,7 +134,7 @@ class ELMoBiLSTM(nn.Module):
         """
 
         :param x:  shape: [batch_size, seq_len, projection_dim]
-        :return: [([batch_size, seq_len, projection_dim]), ([batch_size, seq_len, projection_dim]),...]
+        :return: [([batch_size, seq_len, projection_dim*2]), ([batch_size, seq_len, projection_dim*2]),...]
         """
         forward_cache, backward_cache = x, x.flip(1)
         outputs = [torch.cat([forward_cache, backward_cache], dim=-1)]  # token embedding
@@ -121,7 +150,7 @@ class ELMoBiLSTM(nn.Module):
         return outputs
 
 
-class ELMoLM(nn.Module):
+class ELMoLM(PretrainedModel):
     def __init__(self, config=None):
         """
         :param config:
@@ -160,8 +189,8 @@ class ELMoRepresentation(nn.Module):
         """
         super().__init__()
         self.config = config
-        self.char_cnn = ELMoCharacterCNN(config)
-        self.lstm = ELMoBiLSTM(config)
+        self.char_cnn = ELMoCharacterCNN.from_pretrained(config, config.charcnn_model)
+        self.lstm = ELMoBiLSTM.from_pretrained(config, config.elmo_bilstm_model)
         rep_weights_shape = [config.n_layers + 1, 1, 1, 1]
         if rep_weights is None or len(rep_weights) != config.n_layers + 1:
             if rep_weights is not None and len(rep_weights) != config.n_layers + 1:
