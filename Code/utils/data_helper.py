@@ -207,7 +207,7 @@ class TouTiaoNews(object):
         if not is_train:
             test_data = self.data_process(file_path=self.FILE_PATH[2])
             test_iter = DataLoader(test_data, batch_size=self.batch_size,
-                                   shuffle=True, collate_fn=self.generate_batch)
+                                   shuffle=False, collate_fn=self.generate_batch)
             logging.info(f" ## 测试集构建完毕，一共{len(test_data)}个样本")
             return test_iter
         train_data = self.data_process(file_path=self.FILE_PATH[0])  # 得到处理好的所有样本
@@ -427,7 +427,6 @@ class MR4ELMo(TouTiaoNews):
 
     def generate_batch(self, data_batch):
         """
-        以小批量为单位对序列进行padding
         :param data_batch:
         :return:
         """
@@ -437,7 +436,7 @@ class MR4ELMo(TouTiaoNews):
             batch_sentence.append(sen)
             l = torch.tensor(int(label), dtype=torch.long)
             batch_label.append(l)
-        batch_sentence = batch_to_ids(batch_sentence)
+        batch_sentence = batch_to_ids(batch_sentence) # [batch_size, seq_len, 50]
         batch_label = torch.tensor(batch_label, dtype=torch.long)
         return batch_sentence, batch_label
 
