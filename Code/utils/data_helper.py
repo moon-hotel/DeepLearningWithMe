@@ -9,7 +9,6 @@ import json
 import os
 import torch
 import logging
-import jieba
 import h5py
 import time
 
@@ -83,7 +82,7 @@ def tokenize(text, cut_words=False):
     :return:
     words: 字粒度： ['上', '联', '：', '一', '夜', '春', '风', '去', '，', '怎', '么', '对', '下', '联', '？']
     """
-
+    import jieba
     if contains_chinese(text):  # 中文
         if cut_words:  # 分词
             text = jieba.cut(text)  # 词粒度
@@ -436,7 +435,7 @@ class MR4ELMo(TouTiaoNews):
             batch_sentence.append(sen)
             l = torch.tensor(int(label), dtype=torch.long)
             batch_label.append(l)
-        batch_sentence = batch_to_ids(batch_sentence) # [batch_size, seq_len, 50]
+        batch_sentence = batch_to_ids(batch_sentence)  # [batch_size, seq_len, 50]
         batch_label = torch.tensor(batch_label, dtype=torch.long)
         return batch_sentence, batch_label
 
