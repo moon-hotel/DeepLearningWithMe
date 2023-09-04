@@ -51,6 +51,6 @@ if __name__ == '__main__':
     dataloader = MR(top_k=2000, max_sen_len=None, batch_size=4, is_sample_shuffle=True, cut_words=False)
     train_iter, val_iter = dataloader.load_train_val_test_data(is_train=True)
     vocab = dataloader.get_vocab()
-    embedding = get_glove_embedding(vocab, 150)
+    embedding = get_glove_embedding(vocab, 50)
     input = torch.LongTensor([[0, 2, 0, 5]])
     print(embedding(input))
