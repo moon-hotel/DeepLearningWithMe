@@ -41,8 +41,8 @@
 - [5.1 参数及日志管理](https://mp.weixin.qq.com/s/JXGyKz7q5OCBTVbQg2zY5g)
 - [5.2 模型训练可视化](https://mp.weixin.qq.com/s/LAQGtKLvD3x8QZCfiMZ08A)
 - [5.3 模型保存与复用](https://mp.weixin.qq.com/s/mxwg9NN3RBFktiLIs3LGYA)
-- 5.4 模型的迁移学习
-- 5.5 开源模型复用
+- [5.4 模型的迁移学习](https://mp.weixin.qq.com/s/k61Ha_dX29qFBSD05yEyKw)
+- [5.5 开源模型复用](https://mp.weixin.qq.com/s/VVeViC9UmMHsNunsCHSEiw)
 - 5.6 多GPU训练
 - 5.7 数据预处理缓存
 ## 第 6 章 模型优化与泛化
