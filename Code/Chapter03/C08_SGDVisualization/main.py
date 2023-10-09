@@ -40,7 +40,7 @@ def plot_countour():
     plt.scatter(p[0], p[1], c='black')
     np.random.seed(2022)
     for i in range(25):  # 梯度反方向，最速下降曲线
-        q = f_grad(p[0], p[1]) + np.random.randn(2) * 0.2
+        q = f_grad(p[0], p[1]) + np.random.randn(2) * 0.2 # 加噪音模拟梯度不稳定
         print("P{}:{}".format(i, p))
         # plt.arrow(p[0], p[1], q[0], q[1], head_width=0.1, head_length=0.05, fc='black', ec='black')
         plt.arrow(p[0], p[1], q[0], q[1], head_width=0.1, head_length=0.05)
