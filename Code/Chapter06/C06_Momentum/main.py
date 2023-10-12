@@ -83,5 +83,3 @@ def plot_countour():
 
 if __name__ == '__main__':
     plot_countour()
-    import torch
-    torch.optim.SGD
