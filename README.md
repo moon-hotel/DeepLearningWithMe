@@ -43,11 +43,11 @@
 - [5.3 模型保存与复用](https://mp.weixin.qq.com/s/mxwg9NN3RBFktiLIs3LGYA)
 - [5.4 模型的迁移学习](https://mp.weixin.qq.com/s/k61Ha_dX29qFBSD05yEyKw)
 - [5.5 开源模型复用](https://mp.weixin.qq.com/s/VVeViC9UmMHsNunsCHSEiw)
-- 5.6 多GPU训练
-- 5.7 数据预处理缓存
+- [5.6 多GPU训练](https://mp.weixin.qq.com/s/kd6RUz14M9SOGP_3rLZ5rg)
+- [5.7 数据预处理缓存](https://mp.weixin.qq.com/s/XdlOubKU42UCEBlDyRhUkg)
 ## 第 6 章 模型优化与泛化
-- 6.1 学习率动态调整
-- 6.2 梯度裁剪
+- [6.1 学习率动态调整](https://mp.weixin.qq.com/s/DCi74Ng0w_izVE__dUOtsQ)
+- [6.2 梯度裁剪](https://mp.weixin.qq.com/s/540rSqs2m5_GkTxhIuuH0w)
 - 6.3 标签平滑
 - 6.4 批归一化
 - 6.5 层归一化
