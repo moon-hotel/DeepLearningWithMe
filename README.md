@@ -48,15 +48,14 @@
 ## 第 6 章 模型优化与泛化
 - [6.1 学习率动态调整](https://mp.weixin.qq.com/s/DCi74Ng0w_izVE__dUOtsQ)
 - [6.2 梯度裁剪](https://mp.weixin.qq.com/s/540rSqs2m5_GkTxhIuuH0w)
-- 6.3 标签平滑
-- 6.4 批归一化
-- 6.5 层归一化
-- 6.6 组归一化
-- 6.7 动量法
-- 6.8 Adam算法
-- 6.9 AdaDelta算法
-- 6.10 AdaGrad算法
-- 6.11 RMSprop算法
+- [6.3 批归一化](https://mp.weixin.qq.com/s/qGpNauGAYWmntkPmK9gkxg)
+- [6.4 层归一化](https://mp.weixin.qq.com/s/NAQcKzz8LwiA-qAZkNSj8A)
+- 6.5 组归一化
+- 6.6 动量法
+- 6.7 Adam算法
+- 6.8 AdaDelta算法
+- 6.9 AdaGrad算法
+- 6.10 RMSprop算法
 ## 第 7 章 循环神经网络
 ## 第 8 章 时序任务与模型融合
 ## 第 9 章 自然语言处理
