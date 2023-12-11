@@ -40,6 +40,7 @@ from transformers.utils import logging, ContextManagers
 
 import os
 from contextlib import contextmanager
+
 logger = logging.get_logger(__name__)
 
 try:
@@ -68,6 +69,7 @@ def _make_causal_mask(
         mask = torch.cat([torch.zeros(tgt_len, past_key_values_length, dtype=dtype, device=device), mask], dim=-1)
     return mask[None, None, :, :].expand(bsz, 1, tgt_len, tgt_len + past_key_values_length)
 
+
 def _expand_mask(mask: torch.Tensor, dtype: torch.dtype, tgt_len: Optional[int] = None):
     """
     Expands attention_mask from `[bsz, seq_len]` to `[bsz, 1, tgt_seq_len, src_seq_len]`.
@@ -75,7 +77,7 @@ def _expand_mask(mask: torch.Tensor, dtype: torch.dtype, tgt_len: Optional[int] 
     if len(mask.size()) == 3:
         bsz, src_len, _ = mask.size()
         tgt_len = tgt_len if tgt_len is not None else src_len
-        expanded_mask = mask[:,None,:,:].expand(bsz, 1, tgt_len, src_len).to(dtype)
+        expanded_mask = mask[:, None, :, :].expand(bsz, 1, tgt_len, src_len).to(dtype)
     else:
         bsz, src_len = mask.size()
         tgt_len = tgt_len if tgt_len is not None else src_len
@@ -107,6 +109,15 @@ class RMSNorm(nn.Module):
 
 
 class RotaryEmbedding(torch.nn.Module):
+    """
+    旋转位置编码（Rotary Position Embedding，RoPE）是论文Roformer: Enhanced Transformer With Rotray Position Embedding
+    提出的一种能够将相对位置信息依赖集成到 self-attention 中并提升 transformer 架构性能的位置编码方式。
+    和相对位置编码相比，RoPE 具有更好的外推性，目前是大模型相对位置编码中应用最广的方式之一。
+    外推性是指大模型在训练时和预测时的输入长度不一致，导致模型的泛化能力下降的问题。例如，如果一个模型在训练时只使用了512个 token 的文本，
+    那么在预测时如果输入超过512个 token，模型可能无法正确处理。这就限制了大模型在处理长文本或多轮对话等任务时的效果。
+    https://zhuanlan.zhihu.com/p/647109286
+    """
+
     def __init__(self, dim, max_position_embeddings=2048, base=10000, device=None):
         super().__init__()
         self.inv_freq = 1.0 / (base ** (torch.arange(0, dim, 2).float().to(device) / dim))
@@ -116,6 +127,7 @@ class RotaryEmbedding(torch.nn.Module):
         emb = torch.cat((freqs, freqs), dim=-1)
         self.cos_cached = emb.cos()[None, None, :, :].to(torch.float32)
         self.sin_cached = emb.sin()[None, None, :, :].to(torch.float32)
+
     def forward(self, x, seq_len=None):
         # x: [bs, num_attention_heads, seq_len, head_size]
         # This `if` block is unlikely to be run after we build sin/cos in `__init__`. Keep the logic here just in case.
@@ -128,7 +140,7 @@ class RotaryEmbedding(torch.nn.Module):
             self.sin_cached = emb.sin()[None, None, :, :].to(torch.float32).to(x.device)
         elif self.cos_cached.device != x.device:
             self.cos_cached = self.cos_cached.to(x.device)
-            self.sin_cached = self.sin_cached.to(x.device)  
+            self.sin_cached = self.sin_cached.to(x.device)
         return (
             self.cos_cached[:, :, :seq_len, ...],
             self.sin_cached[:, :, :seq_len, ...],
@@ -171,19 +183,21 @@ class MLP(nn.Module):
 
 class Attention(nn.Module):
     """Multi-headed attention from 'Attention Is All You Need' paper"""
+
     def __init__(self, config: BaichuanConfig):
         super().__init__()
         self.config = config
-        self.hidden_size = config.hidden_size
+        self.hidden_size = config.hidden_size  #
         self.num_heads = config.num_attention_heads
-        self.head_dim = self.hidden_size // self.num_heads
+        self.head_dim = self.hidden_size // self.num_heads  # 每个头的维度
         self.max_position_embeddings = config.max_position_embeddings
 
-        if (self.head_dim * self.num_heads) != self.hidden_size:
+        if (self.head_dim * self.num_heads) != self.hidden_size:  # 需要能整除
             raise ValueError(
                 f"hidden_size must be divisible by num_heads (got `hidden_size`: {self.hidden_size}"
                 f" and `num_heads`: {self.num_heads})."
             )
+        # q,k,v同时进行线性变换
         self.W_pack = nn.Linear(self.hidden_size, 3 * self.hidden_size, bias=False)
         self.o_proj = nn.Linear(self.num_heads * self.head_dim, self.hidden_size, bias=False)
         self.rotary_emb = RotaryEmbedding(self.head_dim, max_position_embeddings=self.max_position_embeddings)
@@ -200,6 +214,7 @@ class Attention(nn.Module):
             output_attentions: bool = False,
             use_cache: bool = False,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor], Optional[Tuple[torch.Tensor]]]:
+        # hidden_states: 第一次输入到Attention模块的是ipput_ids经过Token Embedding后的结果，形状为
         bsz, q_len, _ = hidden_states.size()
 
         proj = self.W_pack(hidden_states)
@@ -231,7 +246,8 @@ class Attention(nn.Module):
             )
         else:
             with torch.backends.cuda.sdp_kernel(enable_flash=True, enable_math=True, enable_mem_efficient=True):
-                attn_output = F.scaled_dot_product_attention(query_states, key_states, value_states, attn_mask = attention_mask)
+                attn_output = F.scaled_dot_product_attention(query_states, key_states, value_states,
+                                                             attn_mask=attention_mask)
             attn_output = attn_output.transpose(1, 2)
         attn_output = attn_output.reshape(bsz, q_len, self.hidden_size)
         attn_output = self.o_proj(attn_output)
@@ -327,6 +343,7 @@ class BaichuanModel(BaichuanPreTrainedModel):
         self.vocab_size = config.vocab_size
 
         self.embed_tokens = nn.Embedding(config.vocab_size, config.hidden_size, self.padding_idx)
+        # 默认config.json中 padding_idx 为0
         self.layers = nn.ModuleList([DecoderLayer(config) for _ in range(config.num_hidden_layers)])
         self.norm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
 
@@ -377,6 +394,7 @@ class BaichuanModel(BaichuanPreTrainedModel):
             return_dict: Optional[bool] = None,
     ) -> Union[Tuple, BaseModelOutputWithPast]:
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
+        print(output_attentions)
         output_hidden_states = (
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
         )
@@ -511,7 +529,10 @@ class NormHead(nn.Module):
             norm_weight = self.weight
         return nn.functional.linear(hidden_states, norm_weight)
 
+
 _init_weights = True
+
+
 @contextmanager
 def no_init_weights(_enable=True):
     global _init_weights
@@ -523,13 +544,16 @@ def no_init_weights(_enable=True):
     finally:
         _init_weights = old_init_weights
 
+
 class BaichuanForCausalLM(BaichuanPreTrainedModel):
     def __init__(self, config, *model_args, **model_kwargs):
         super().__init__(config, *model_args, **model_kwargs)
         self.model = BaichuanModel(config)
 
         self.lm_head = NormHead(config.hidden_size, config.vocab_size, bias=False)
-        if hasattr(config, "quantization_config") and isinstance(config.quantization_config, dict) and config.quantization_config.get('load_in_4bit', False):
+        if hasattr(config, "quantization_config") and isinstance(config.quantization_config,
+                                                                 dict) and config.quantization_config.get(
+            'load_in_4bit', False):
             try:
                 from .quantizer import quantize_offline, init_model_weight_int4
             except ImportError:
@@ -555,25 +579,26 @@ class BaichuanForCausalLM(BaichuanPreTrainedModel):
 
     def get_decoder(self):
         return self.model
-    
+
     @classmethod
     def from_pretrained(
-        cls,
-        pretrained_model_name_or_path: Optional[Union[str, os.PathLike]],
-        *model_args,
-        config: Optional[Union[PretrainedConfig, str, os.PathLike]] = None,
-        cache_dir: Optional[Union[str, os.PathLike]] = None,
-        ignore_mismatched_sizes: bool = False,
-        force_download: bool = False,
-        local_files_only: bool = False,
-        token: Optional[Union[str, bool]] = None,
-        revision: str = "main",
-        use_safetensors: bool = None,
-        **kwargs,
+            cls,
+            pretrained_model_name_or_path: Optional[Union[str, os.PathLike]],
+            *model_args,
+            config: Optional[Union[PretrainedConfig, str, os.PathLike]] = None,
+            cache_dir: Optional[Union[str, os.PathLike]] = None,
+            ignore_mismatched_sizes: bool = False,
+            force_download: bool = False,
+            local_files_only: bool = False,
+            token: Optional[Union[str, bool]] = None,
+            revision: str = "main",
+            use_safetensors: bool = None,
+            **kwargs,
     ):
         # Load config if we don't provide a configuration
-        if not isinstance(config, PretrainedConfig):
+        if not isinstance(config, PretrainedConfig):  # 如果 config 不是一个 PretrainedConfig 类对象
             config_path = config if config is not None else pretrained_model_name_or_path
+            # cls.config_class.from_pretrained() 调用 BaichuanConfig() 得到一个配置类对象
             config, model_kwargs = cls.config_class.from_pretrained(
                 config_path,
                 cache_dir=cache_dir,
@@ -591,28 +616,29 @@ class BaichuanForCausalLM(BaichuanPreTrainedModel):
             )
         else:
             model_kwargs = kwargs
-        
+
         if hasattr(config, "quantization_config") and config.quantization_config['load_in_4bit']:
+            # 是否进行量化，默认不进行
             try:
                 from .quantizer import init_model_weight_int4
                 from accelerate import init_empty_weights, dispatch_model, infer_auto_device_map
                 from accelerate.utils import CustomDtype
                 from accelerate.utils import get_balanced_memory
             except ImportError:
-                raise ImportError(f"Needs import model weight init func to run quantize.") 
-            # Instantiate model.
+                raise ImportError(f"Needs import model weight init func to run quantize.")
+                # Instantiate model.
             init_contexts = [no_init_weights(_enable=True)]
             init_contexts.append(init_empty_weights())
             with ContextManagers(init_contexts):
                 model = cls(config)
-            
+
             model_file = os.path.join(pretrained_model_name_or_path, 'pytorch_model.bin')
-            state_dict = torch.load(model_file, map_location="cpu") 
+            state_dict = torch.load(model_file, map_location="cpu")
             model.is_quantized = True
-            
+
             device_map = kwargs.pop("device_map", None)
             torch_dtype = kwargs.pop("torch_dtype", None)
-            
+
             if device_map is not None:
                 kwargs = {"no_split_module_classes": model._no_split_modules}
                 target_dtype = CustomDtype.INT4
@@ -625,9 +651,9 @@ class BaichuanForCausalLM(BaichuanPreTrainedModel):
                 )
                 kwargs["max_memory"] = max_memory
                 device_map = infer_auto_device_map(model, dtype=target_dtype, **kwargs)
-                
+
             model = init_model_weight_int4(config, model, state_dict)
-            
+
             # Set model in evaluation mode to deactivate DropOut modules by default
             model.eval()
             # If it is a model with generation capabilities, attempt to load the generation config
@@ -652,15 +678,19 @@ class BaichuanForCausalLM(BaichuanPreTrainedModel):
                         "Generation config file not found, using a generation config created from the model config."
                     )
                     pass
-            
+
             if device_map is not None:
                 dispatch_model(model, device_map=device_map)
-            
+
             return model
-        return super(BaichuanForCausalLM, cls).from_pretrained(pretrained_model_name_or_path, *model_args, 
-                config=config, cache_dir=cache_dir, ignore_mismatched_sizes=ignore_mismatched_sizes, 
-                force_download=force_download, local_files_only=local_files_only, token=token, revision=revision, 
-                use_safetensors=use_safetensors, **kwargs)   
+        return super(BaichuanForCausalLM, cls).from_pretrained(pretrained_model_name_or_path, *model_args,
+                                                               config=config, cache_dir=cache_dir,
+                                                               ignore_mismatched_sizes=ignore_mismatched_sizes,
+                                                               force_download=force_download,
+                                                               local_files_only=local_files_only, token=token,
+                                                               revision=revision,
+                                                               use_safetensors=use_safetensors, **kwargs)
+        # 返回根据预训练模型实例化的BaichuanForCausalLM类对象
 
     def forward(
             self,
@@ -675,12 +705,17 @@ class BaichuanForCausalLM(BaichuanPreTrainedModel):
             output_hidden_states: Optional[bool] = None,
             return_dict: Optional[bool] = None,
     ) -> Union[Tuple, CausalLMOutputWithPast]:
-
+        # 这里的self.config是上面super(BaichuanForCausalLM, cls).from_pretrained()传入的config对象
+        # config类的祖父类继承自Transformers中的PretrainedConfig类，包含有 output_attentions
+        # output_hidden_states 等相关默认参数
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
+        # 返回结果是否输出注意力 True or False，默认情况下为False
+        # 如果需要输出可在config.json中添加一行 "output_attentions": true
         output_hidden_states = (
-            output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
-        )
+            output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states)
+        # 同 output_attentions 含义类似，如需返回可在config.json中添加一行 "output_hidden_states": true
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        # 以字典形式返回结果，默认为True
 
         # decoder outputs consists of (dec_features, layer_state, dec_hidden, dec_attn)
         outputs = self.model(
@@ -769,7 +804,7 @@ class BaichuanForCausalLM(BaichuanPreTrainedModel):
         return quantize_online(self, bits)
 
     def chat(self, tokenizer, messages: List[dict], stream=False,
-             generation_config: Optional[GenerationConfig]=None):
+             generation_config: Optional[GenerationConfig] = None):
         generation_config = generation_config or self.generation_config
         input_ids = build_chat_input(self, tokenizer, messages, generation_config.max_new_tokens)
         if stream:
