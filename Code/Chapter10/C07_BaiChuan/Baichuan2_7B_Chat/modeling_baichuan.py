@@ -191,6 +191,7 @@ class Attention(nn.Module):
         self.num_heads = config.num_attention_heads
         self.head_dim = self.hidden_size // self.num_heads  # 每个头的维度
         self.max_position_embeddings = config.max_position_embeddings
+        # 位置编码支持的最大长度，配置文件中为4096，即支持上下文窗口4K
 
         if (self.head_dim * self.num_heads) != self.hidden_size:  # 需要能整除
             raise ValueError(
@@ -208,35 +209,45 @@ class Attention(nn.Module):
     def forward(
             self,
             hidden_states: torch.Tensor,
-            attention_mask: Optional[torch.Tensor] = None,
+            # hidden_states: 第一次输入到Attention模块的是ipput_ids经过Token Embedding后的结果
+            # 形状为[batch_size, seq_len, hidden_size]
+            attention_mask: Optional[torch.Tensor] = None,  #
             position_ids: Optional[torch.LongTensor] = None,
             past_key_value: Optional[Tuple[torch.Tensor]] = None,
             output_attentions: bool = False,
-            use_cache: bool = False,
+            use_cache: bool = False,  # 注意力机制中是否使用上一次解码计算得到的Key和Value
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor], Optional[Tuple[torch.Tensor]]]:
-        # hidden_states: 第一次输入到Attention模块的是ipput_ids经过Token Embedding后的结果，形状为
+
         bsz, q_len, _ = hidden_states.size()
 
-        proj = self.W_pack(hidden_states)
+        proj = self.W_pack(hidden_states)  # [batch_size, seq_len, 3 * hidden_size]
         proj = proj.unflatten(-1, (3, self.hidden_size)).unsqueeze(0).transpose(0, -2).squeeze(-2)
+        # proj: [batch_size, seq_len, 3 * hidden_size] ==> [batch_size, seq_len, 3, hidden_size]
+        # ==> [1, batch_size, seq_len, 3, hidden_size] ==> [3, batch_size, seq_len, 1, hidden_size]
+        # ==> [3, batch_size, seq_len, hidden_size]
+        # 下面是分别获得线性变换后的Query,Key,Value
         query_states = proj[0].view(bsz, q_len, self.num_heads, self.head_dim).transpose(1, 2)
         key_states = proj[1].view(bsz, q_len, self.num_heads, self.head_dim).transpose(1, 2)
         value_states = proj[2].view(bsz, q_len, self.num_heads, self.head_dim).transpose(1, 2)
-
-        kv_seq_len = key_states.shape[-2]
+        # query_ates, key_states,value_states 的形状相同
+        # [batch_size, seq_len, hidden_size] ==> [batch_size, seq_len, num_heads, head_dim]
+        # ==> [batch_size, num_heads, seq_len, head_dim]
+        kv_seq_len = key_states.shape[-2]  #
         if past_key_value is not None:
-            kv_seq_len += past_key_value[0].shape[-2]
-        cos, sin = self.rotary_emb(value_states, seq_len=kv_seq_len)
+            kv_seq_len += past_key_value[0].shape[-2]  # 取上一次的序列长度
+        cos, sin = self.rotary_emb(value_states, seq_len=kv_seq_len)  # [1,1,seq_len,head_dim]
         query_states, key_states = apply_rotary_pos_emb(query_states, key_states, cos, sin, position_ids)
-        # [bsz, nh, t, hd]
+        # [batch_size,num_heads, seq_len, head_dim]
 
         if past_key_value is not None:
-            # reuse k, v, self_attention
+            # reuse k, v, self_attention # 沿着序列长度即seq_len的维度拼接上一次的key和Value
             key_states = torch.cat([past_key_value[0], key_states], dim=2)
             value_states = torch.cat([past_key_value[1], value_states], dim=2)
+            # 形状均为: [batch_size,num_heads, seq_len + past_key_len, head_dim]
 
         past_key_value = (key_states, value_states) if use_cache else None
         if xops is not None and self.training:
+            # 加速计算过程
             attn_weights = None
             query_states = query_states.transpose(1, 2)
             key_states = key_states.transpose(1, 2)
@@ -245,6 +256,7 @@ class Attention(nn.Module):
                 query_states, key_states, value_states, attn_bias=xops.LowerTriangularMask()
             )
         else:
+            # 采用Pytorch 2.0 版本的新特性，加速计算
             with torch.backends.cuda.sdp_kernel(enable_flash=True, enable_math=True, enable_mem_efficient=True):
                 attn_output = F.scaled_dot_product_attention(query_states, key_states, value_states,
                                                              attn_mask=attention_mask)
@@ -383,18 +395,25 @@ class BaichuanModel(BaichuanPreTrainedModel):
 
     def forward(
             self,
-            input_ids: torch.LongTensor = None,
+            input_ids: torch.LongTensor = None,  # 原始输入索引id, 形状为 [batch_size, seq_len]
             attention_mask: Optional[torch.Tensor] = None,
-            position_ids: Optional[torch.LongTensor] = None,
+            # attention mask, 即用于在训练阶段掩盖当前时刻t之后的信息（t+1,t+2,...）
+            # 默认为空，不传入，后面会构造
+            position_ids: Optional[torch.LongTensor] = None,  #
             past_key_values: Optional[List[torch.FloatTensor]] = None,
             inputs_embeds: Optional[torch.FloatTensor] = None,
+            # 直接传入embedding后的结果, input_ids后续不在进行embedding, 形状为[batch_size, seq_len, hidden_size]
             use_cache: Optional[bool] = None,
             output_attentions: Optional[bool] = None,
             output_hidden_states: Optional[bool] = None,
             return_dict: Optional[bool] = None,
     ) -> Union[Tuple, BaseModelOutputWithPast]:
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
-        print(output_attentions)
+        # 返回结果是否输出注意力 True or False，默认情况下为False
+        # 这里的self.config是上面BaichuanModel()初始化时传入的config对象, 它一部分成员变量来自于本地的config.json文件
+        # 一部分是config类继承自，BaichuanConfig和 Transformers中的PretrainedConfig类，
+        # 包含有 output_attentions, output_hidden_states 等相关默认参数
+        # 如果需要输出可在config.json中添加一行 "output_attentions": true
         output_hidden_states = (
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
         )
@@ -428,10 +447,12 @@ class BaichuanModel(BaichuanPreTrainedModel):
         else:
             position_ids = position_ids.view(-1, seq_length).long()
 
-        if inputs_embeds is None:
-            inputs_embeds = self.embed_tokens(input_ids)
+        if inputs_embeds is None:  # 传入inputs_embeds后，便不在进行embedding，例如传入经过第三方词向量嵌入后的表示
+            inputs_embeds = self.embed_tokens(input_ids)  # [batch_size, seq_len, hidden_size]
+        print(input_ids.shape)
+        print(inputs_embeds.shape)
         # embed positions
-        if attention_mask is None:
+        if attention_mask is None:  # 下面开始构造注意力掩码
             attention_mask = torch.ones(
                 (batch_size, seq_length_with_past), dtype=torch.bool, device=inputs_embeds.device
             )
@@ -596,7 +617,8 @@ class BaichuanForCausalLM(BaichuanPreTrainedModel):
             **kwargs,
     ):
         # Load config if we don't provide a configuration
-        if not isinstance(config, PretrainedConfig):  # 如果 config 不是一个 PretrainedConfig 类对象
+        if not isinstance(config, PretrainedConfig):
+            # 如果 config 不是一个 PretrainedConfig 类对象，默认为None,即会从本地config.json中读取
             config_path = config if config is not None else pretrained_model_name_or_path
             # cls.config_class.from_pretrained() 调用 BaichuanConfig() 得到一个配置类对象
             config, model_kwargs = cls.config_class.from_pretrained(
@@ -705,11 +727,11 @@ class BaichuanForCausalLM(BaichuanPreTrainedModel):
             output_hidden_states: Optional[bool] = None,
             return_dict: Optional[bool] = None,
     ) -> Union[Tuple, CausalLMOutputWithPast]:
-        # 这里的self.config是上面super(BaichuanForCausalLM, cls).from_pretrained()传入的config对象
-        # config类的祖父类继承自Transformers中的PretrainedConfig类，包含有 output_attentions
-        # output_hidden_states 等相关默认参数
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
         # 返回结果是否输出注意力 True or False，默认情况下为False
+        # 这里的self.config是上面super(BaichuanForCausalLM, cls).from_pretrained()传入的config对象,它一部分成员变量来自于本地的config.json文件
+        # 一部分是config类继承自，BaichuanConfig和 Transformers中的PretrainedConfig类，
+        # 后这便包含有 output_attentions, output_hidden_states 等相关默认参数
         # 如果需要输出可在config.json中添加一行 "output_attentions": true
         output_hidden_states = (
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states)
