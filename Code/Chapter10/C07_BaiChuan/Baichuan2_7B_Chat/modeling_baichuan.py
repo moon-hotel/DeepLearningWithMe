@@ -211,7 +211,7 @@ class Attention(nn.Module):
             hidden_states: torch.Tensor,
             # hidden_states: 第一次输入到Attention模块的是ipput_ids经过Token Embedding后的结果
             # 形状为[batch_size, seq_len, hidden_size]
-            attention_mask: Optional[torch.Tensor] = None,  #
+            attention_mask: Optional[torch.Tensor] = None,  #注意力矩阵
             position_ids: Optional[torch.LongTensor] = None,
             past_key_value: Optional[Tuple[torch.Tensor]] = None,
             output_attentions: bool = False,
@@ -243,26 +243,42 @@ class Attention(nn.Module):
             # reuse k, v, self_attention # 沿着序列长度即seq_len的维度拼接上一次的key和Value
             key_states = torch.cat([past_key_value[0], key_states], dim=2)
             value_states = torch.cat([past_key_value[1], value_states], dim=2)
-            # 形状均为: [batch_size,num_heads, seq_len + past_key_len, head_dim]
+            # 上面两个形状均为: [batch_size,num_heads, past_key_len + seq_len, head_dim]
+            # 后面我们还是用 seq_len 来代指  key_states 和 value_states 的序列长度
+            #    用q_seq_len来代指query_states的序列长度，
+            #    因为这里cat拼接以后key_states和value_states的序列长度会变长 ，即 seq_len > q_seq_len
+            #    如果这里没有拼接，则seq_len == q_seq_len
 
         past_key_value = (key_states, value_states) if use_cache else None
         if xops is not None and self.training:
             # 加速计算过程
             attn_weights = None
-            query_states = query_states.transpose(1, 2)
-            key_states = key_states.transpose(1, 2)
-            value_states = value_states.transpose(1, 2)
+            query_states = query_states.transpose(1, 2)  # [batch_size, q_seq_len,num_heads, head_dim]
+            key_states = key_states.transpose(1, 2)  # [batch_size, seq_len, num_heads, head_dim]
+            value_states = value_states.transpose(1, 2)  # [batch_size, seq_len, num_heads, head_dim]
             attn_output = xops.memory_efficient_attention(
                 query_states, key_states, value_states, attn_bias=xops.LowerTriangularMask()
             )
         else:
             # 采用Pytorch 2.0 版本的新特性，加速计算
+            # query_states [batch_size,num_heads,q_seq_len, head_dim]
+            # key_states [batch_size,num_heads, seq_len, head_dim]
+            # value_states [batch_size,num_heads, seq_len, head_dim]
+
             with torch.backends.cuda.sdp_kernel(enable_flash=True, enable_math=True, enable_mem_efficient=True):
                 attn_output = F.scaled_dot_product_attention(query_states, key_states, value_states,
                                                              attn_mask=attention_mask)
-            attn_output = attn_output.transpose(1, 2)
-        attn_output = attn_output.reshape(bsz, q_len, self.hidden_size)
-        attn_output = self.o_proj(attn_output)
+                # scaled_dot_product_attention 的计算过程
+                #     attn_weight = torch.softmax((Q @ K.transpose(-2, -1) / math.sqrt(Q.size(-1))) + attn_mask, dim=-1)
+                #           ==> [batch_size,num_heads,q_seq_len, head_dim] @ [batch_size,num_heads, head_dim, seq_len]
+                #           ==> [batch_size,num_heads,q_seq_len,seq_len]  + [batch_size, 1, q_seq_len,seq_len]
+                #           attn_weight = torch.dropout(attn_weight, dropout_p)
+                #     return attn_weight @ V
+                #           ==> [batch_size,num_heads,q_seq_len,seq_len] @ [batch_size,num_heads, seq_len, head_dim]
+                #           ==> [batch_size,num_heads,q_seq_len,head_dim]
+            attn_output = attn_output.transpose(1, 2) # [batch_size, q_seq_len, num_heads, head_dim]
+        attn_output = attn_output.reshape(bsz, q_len, self.hidden_size) # [batch_size, q_seq_len, hidden_size】
+        attn_output = self.o_proj(attn_output) # [batch_size, q_seq_len, hidden_size】
 
         if not output_attentions:
             attn_weights = None
