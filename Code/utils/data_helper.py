@@ -254,8 +254,8 @@ class TangShi(TouTiaoNews):
                     content = item['paragraphs']  # ['日滿東窗照被堆，宿湯猶自暖如煨。', '尺三汗脚君休笑，曾踏鞾霜待漏來。']
                     content = "".join(content)  # '日滿東窗照被堆，宿湯猶自暖如煨。尺三汗脚君休笑，曾踏鞾霜待漏來。'
                     if not skip(content):
-                        samples.append(content)  # ['','日滿東窗照被堆，宿湯猶自暖如煨。', '尺三汗脚君休笑，曾踏鞾霜待漏來。']
-                        labels.append(content[1:] + content[-1])  # 向左平移 ['','滿東窗照被堆，宿湯猶自暖如煨。尺三汗脚君休笑，曾踏鞾霜待漏來。。']
+                        samples.append(content[:-1])  # ['','日滿東窗照被堆，宿湯猶自暖如煨', '尺三汗脚君休笑，曾踏鞾霜待漏來']
+                        labels.append(content[1:])  # 向左平移 ['','滿東窗照被堆，宿湯猶自暖如煨。尺三汗脚君休笑，曾踏鞾霜待漏來。']
                     else:
                         logging.debug(f"过滤古诗：len = {len(content)}, {content}")
             return samples, labels
