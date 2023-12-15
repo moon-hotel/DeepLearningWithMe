@@ -211,9 +211,9 @@ class Attention(nn.Module):
             hidden_states: torch.Tensor,
             # hidden_states: 第一次输入到Attention模块的是ipput_ids经过Token Embedding后的结果
             # 形状为[batch_size, seq_len, hidden_size]
-            attention_mask: Optional[torch.Tensor] = None,  #注意力矩阵
+            attention_mask: Optional[torch.Tensor] = None,  # 注意力矩阵
             position_ids: Optional[torch.LongTensor] = None,
-            past_key_value: Optional[Tuple[torch.Tensor]] = None,
+            past_key_value: Optional[Tuple[torch.Tensor]] = None,  # 推理过程中才会用到
             output_attentions: bool = False,
             use_cache: bool = False,  # 注意力机制中是否使用上一次解码计算得到的Key和Value
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor], Optional[Tuple[torch.Tensor]]]:
@@ -276,9 +276,9 @@ class Attention(nn.Module):
                 #     return attn_weight @ V
                 #           ==> [batch_size,num_heads,q_seq_len,seq_len] @ [batch_size,num_heads, seq_len, head_dim]
                 #           ==> [batch_size,num_heads,q_seq_len,head_dim]
-            attn_output = attn_output.transpose(1, 2) # [batch_size, q_seq_len, num_heads, head_dim]
-        attn_output = attn_output.reshape(bsz, q_len, self.hidden_size) # [batch_size, q_seq_len, hidden_size】
-        attn_output = self.o_proj(attn_output) # [batch_size, q_seq_len, hidden_size】
+            attn_output = attn_output.transpose(1, 2)  # [batch_size, q_seq_len, num_heads, head_dim]
+        attn_output = attn_output.reshape(bsz, q_len, self.hidden_size)  # [batch_size, q_seq_len, hidden_size】
+        attn_output = self.o_proj(attn_output)  # [batch_size, q_seq_len, hidden_size】
 
         if not output_attentions:
             attn_weights = None
@@ -291,11 +291,9 @@ class DecoderLayer(nn.Module):
         super().__init__()
         self.hidden_size = config.hidden_size
         self.self_attn = Attention(config=config)
-        self.mlp = MLP(
-            hidden_size=self.hidden_size,
-            intermediate_size=config.intermediate_size,
-            hidden_act=config.hidden_act,
-        )
+        self.mlp = MLP(hidden_size=self.hidden_size,
+                       intermediate_size=config.intermediate_size,
+                       hidden_act=config.hidden_act)
         self.input_layernorm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         self.post_attention_layernorm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
 
@@ -465,8 +463,8 @@ class BaichuanModel(BaichuanPreTrainedModel):
 
         if inputs_embeds is None:  # 传入inputs_embeds后，便不在进行embedding，例如传入经过第三方词向量嵌入后的表示
             inputs_embeds = self.embed_tokens(input_ids)  # [batch_size, seq_len, hidden_size]
-        print(input_ids.shape)
-        print(inputs_embeds.shape)
+        # print(input_ids.shape)
+        # print(inputs_embeds.shape)
         # embed positions
         if attention_mask is None:  # 下面开始构造注意力掩码
             attention_mask = torch.ones(
@@ -494,7 +492,7 @@ class BaichuanModel(BaichuanPreTrainedModel):
             if output_hidden_states:
                 all_hidden_states += (hidden_states,)
 
-            past_key_value = past_key_values[idx] if past_key_values is not None else None
+            past_key_value = past_key_values[idx] if past_key_values is not None else None # 取每一层对应的缓存
 
             if self.gradient_checkpointing and self.training:
 
@@ -537,6 +535,8 @@ class BaichuanModel(BaichuanPreTrainedModel):
             all_hidden_states += (hidden_states,)
 
         next_cache = next_decoder_cache if use_cache else None
+        # print("return_dict:", return_dict)
+        # print("use_cache:", use_cache)
         if not return_dict:
             return tuple(v for v in [hidden_states, next_cache, all_hidden_states, all_self_attns] if v is not None)
         return BaseModelOutputWithPast(
