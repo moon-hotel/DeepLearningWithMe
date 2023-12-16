@@ -52,6 +52,18 @@ except ImportError:
     )
 
 
+"""
+特别说明，注释中的所有：
+1. seq表示原始的输入序列，形状为[batch_size, seq_len]
+2. seq_len表示原始输入序列的长度；
+3. query_states, key_states, value_states表示本次前向传播时，seq经过3个线性变换得到的结果（后于用于自注意力计算）
+4. query_len, key_len, value_len 表示本次前向传播时query_states, key_states, value_states序列的长度；
+5. 在训练过程中 query_len == key_len == value_len == seq_len
+6. 在推理过程中 key_len == value_len, 
+"""
+
+
+
 # Copied from transformers.models.bart.modeling_bart._make_causal_mask
 def _make_causal_mask(
         input_ids_shape: torch.Size, dtype: torch.dtype, device: torch.device, past_key_values_length: int = 0
@@ -165,6 +177,9 @@ def apply_rotary_pos_emb(q, k, cos_, sin_, position_ids):
 
 
 class MLP(nn.Module):
+    """
+    基于门机制的多层感知机
+    """
     def __init__(
             self,
             hidden_size: int,
@@ -198,7 +213,7 @@ class Attention(nn.Module):
                 f"hidden_size must be divisible by num_heads (got `hidden_size`: {self.hidden_size}"
                 f" and `num_heads`: {self.num_heads})."
             )
-        # q,k,v同时进行线性变换
+        # 对输入q,k,v同时进行线性变换，所以是3部分
         self.W_pack = nn.Linear(self.hidden_size, 3 * self.hidden_size, bias=False)
         self.o_proj = nn.Linear(self.num_heads * self.head_dim, self.hidden_size, bias=False)
         self.rotary_emb = RotaryEmbedding(self.head_dim, max_position_embeddings=self.max_position_embeddings)
@@ -209,27 +224,34 @@ class Attention(nn.Module):
     def forward(
             self,
             hidden_states: torch.Tensor,
-            # hidden_states: 第一次输入到Attention模块的是ipput_ids经过Token Embedding后的结果
+            # hidden_states: 第一次输入到Attention模块的是input_ids经过Token Embedding后的结果
             # 形状为[batch_size, seq_len, hidden_size]
-            attention_mask: Optional[torch.Tensor] = None,  # 注意力矩阵
-            position_ids: Optional[torch.LongTensor] = None,
-            past_key_value: Optional[Tuple[torch.Tensor]] = None,  # 推理过程中才会用到
+            attention_mask: Optional[torch.Tensor] = None,
+            # 注意力矩阵，用于在训练时掩盖当前时刻之后的信息，形状为[batch_size, 1, query_len, key_len]
+            position_ids: Optional[torch.LongTensor] = None,  #
+            past_key_value: Optional[Tuple[torch.Tensor]] = None,
+            # 推理过程中才会用到, 用来传入截止上一个时刻解码时，之前所有时刻累计拼接得到的key_states和value_states
             output_attentions: bool = False,
-            use_cache: bool = False,  # 注意力机制中是否使用上一次解码计算得到的Key和Value
+            # 是否返回注意力权重，默认为False，事实上本代码也不支持返回注意力权重矩阵，因为memory_efficient_attention和
+            # scaled_dot_product_attention两个函数的返回结果都不包含注意力权重矩阵。且output_attentions=True时本代码还会报错
+            # 算是一个bug， 因为在下面的代码过程attn_weights一开始没有声明，当output_attentions=True时报错:
+            # UnboundLocalError:  local variable 'attn_weights' referenced before assignment
+            use_cache: bool = False,  # 在推理工程中是否使用上一时刻计算的缓存结果加速，默认情况为使用
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor], Optional[Tuple[torch.Tensor]]]:
 
-        bsz, q_len, _ = hidden_states.size()
+        bsz, q_len, _ = hidden_states.size() # [batch_size, seq_len, hidden_size]
 
         proj = self.W_pack(hidden_states)  # [batch_size, seq_len, 3 * hidden_size]
         proj = proj.unflatten(-1, (3, self.hidden_size)).unsqueeze(0).transpose(0, -2).squeeze(-2)
         # proj: [batch_size, seq_len, 3 * hidden_size] ==> [batch_size, seq_len, 3, hidden_size]
         # ==> [1, batch_size, seq_len, 3, hidden_size] ==> [3, batch_size, seq_len, 1, hidden_size]
         # ==> [3, batch_size, seq_len, hidden_size]
-        # 下面是分别获得线性变换后的Query,Key,Value
+
+        # 分离得到 query_states, key_states, value_states 三者形状相同
+        # 在推理时使用 use_cache 时 query
         query_states = proj[0].view(bsz, q_len, self.num_heads, self.head_dim).transpose(1, 2)
         key_states = proj[1].view(bsz, q_len, self.num_heads, self.head_dim).transpose(1, 2)
         value_states = proj[2].view(bsz, q_len, self.num_heads, self.head_dim).transpose(1, 2)
-        # query_ates, key_states,value_states 的形状相同
         # [batch_size, seq_len, hidden_size] ==> [batch_size, seq_len, num_heads, head_dim]
         # ==> [batch_size, num_heads, seq_len, head_dim]
         kv_seq_len = key_states.shape[-2]  #
@@ -241,6 +263,7 @@ class Attention(nn.Module):
 
         if past_key_value is not None:
             # reuse k, v, self_attention # 沿着序列长度即seq_len的维度拼接上一次的key和Value
+            # 分离得到 query_states, key_states, value_states 三者在训练以及推理但不使用 use_cache 时形状相同
             key_states = torch.cat([past_key_value[0], key_states], dim=2)
             value_states = torch.cat([past_key_value[1], value_states], dim=2)
             # 上面两个形状均为: [batch_size,num_heads, past_key_len + seq_len, head_dim]
@@ -250,6 +273,7 @@ class Attention(nn.Module):
             #    如果这里没有拼接，则seq_len == q_seq_len
 
         past_key_value = (key_states, value_states) if use_cache else None
+        print("attention_mask", attention_mask.shape)
         if xops is not None and self.training:
             # 加速计算过程
             attn_weights = None
@@ -385,26 +409,38 @@ class BaichuanModel(BaichuanPreTrainedModel):
 
     # Copied from transformers.models.bart.modeling_bart.BartDecoder._prepare_decoder_attention_mask
     def _prepare_decoder_attention_mask(self, attention_mask, input_shape, inputs_embeds, past_key_values_length):
+        # 这个函数是用来构造 注意力掩码，输出形状为[batch_size, 1, query_len, key_len]
+        # 当模型训练时，query_len == key_len, 即此时的attention_mask是一个正方形
+        #
+        # 当模型推理，且使用use_cache时，query为每次仅为上一时刻的输出，所以query_len=1， key_len会一直累加上一次key的长度
+        #  此时得到的attention_mask的形状为[batch_size, 1, 1, key_len]，全是0，即不做 注意力遮蔽处理
         # create causal mask
-        # [bsz, seq_len] -> [bsz, 1, tgt_seq_len, src_seq_len]
+        # [batch_size, seq_len] -> [batch_size, 1, query_len, key_len] # seq_len == key_len
         combined_attention_mask = None
         if input_shape[-1] > 1:
+            # 说明是在训练阶段 或者  推理阶段但是没有使用use_cache
+            # 在这两种情况下才需要 causal mask
             combined_attention_mask = _make_causal_mask(
                 input_shape,
                 inputs_embeds.dtype,
                 device=inputs_embeds.device,
                 past_key_values_length=past_key_values_length,
             )
+            print("combined_attention_mask", combined_attention_mask)
+            print("====")
 
         if attention_mask is not None:
+            # 此处的条件会始终成立，因为_prepare_decoder_attention_mask函数前对attention_mask进行了处理
             # [bsz, seq_len] -> [bsz, 1, tgt_seq_len, src_seq_len]
             expanded_attn_mask = _expand_mask(attention_mask, inputs_embeds.dtype, tgt_len=input_shape[-1]).to(
-                inputs_embeds.device
-            )
+                inputs_embeds.device)  # 构造Attention Mask
+            print("expanded_attn_mask", expanded_attn_mask)
+
             combined_attention_mask = (
                 expanded_attn_mask if combined_attention_mask is None else expanded_attn_mask + combined_attention_mask
-            )
-
+            )  # 这里else 后面的+expanded_attn_mask似乎没有用，因为 combined_attention_mask is not None的时候expanded_attn_mask全是0
+        print("combined_attention_mask", combined_attention_mask)
+        print("combined_attention_mask", combined_attention_mask.shape)
         return combined_attention_mask
 
     def forward(
@@ -432,6 +468,7 @@ class BaichuanModel(BaichuanPreTrainedModel):
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
         )
         use_cache = use_cache if use_cache is not None else self.config.use_cache
+        print(use_cache,"=======----------------")
 
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
@@ -492,7 +529,7 @@ class BaichuanModel(BaichuanPreTrainedModel):
             if output_hidden_states:
                 all_hidden_states += (hidden_states,)
 
-            past_key_value = past_key_values[idx] if past_key_values is not None else None # 取每一层对应的缓存
+            past_key_value = past_key_values[idx] if past_key_values is not None else None  # 取每一层对应的缓存
 
             if self.gradient_checkpointing and self.training:
 
