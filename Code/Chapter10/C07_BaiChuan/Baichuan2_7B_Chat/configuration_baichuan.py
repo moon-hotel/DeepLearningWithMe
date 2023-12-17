@@ -67,3 +67,7 @@ class BaichuanConfig(PretrainedConfig):
             tie_word_embeddings=tie_word_embeddings,
             **kwargs,
         )
+
+    def show_paras(self):
+        for k,v in self.__dict__.items():
+            logger.info(f"{k} = {v}")
