@@ -51,17 +51,16 @@ except ImportError:
         "Xformers is not installed correctly. If you want to use memory_efficient_attention to accelerate training use the following command to install Xformers\npip install xformers."
     )
 
-
 """
 特别说明，注释中的所有：
 1. seq表示原始的输入序列，形状为[batch_size, seq_len]
 2. seq_len表示原始输入序列的长度；
 3. query_states, key_states, value_states表示本次前向传播时，seq经过3个线性变换得到的结果（后于用于自注意力计算）
+   如果在推理过程中使用了use_cache，那么key_states, value_states后续还会拼接了上一时刻计算得到的key_states, value_states
 4. query_len, key_len, value_len 表示本次前向传播时query_states, key_states, value_states序列的长度；
 5. 在训练过程中 query_len == key_len == value_len == seq_len
-6. 在推理过程中 key_len == value_len, 
+6. 在推理过程中且use_cache=True， key_len == value_len, kv_seq_len = key_len + 上一时刻的key_len
 """
-
 
 
 # Copied from transformers.models.bart.modeling_bart._make_causal_mask
@@ -180,6 +179,7 @@ class MLP(nn.Module):
     """
     基于门机制的多层感知机
     """
+
     def __init__(
             self,
             hidden_size: int,
@@ -193,6 +193,10 @@ class MLP(nn.Module):
         self.act_fn = ACT2FN[hidden_act]
 
     def forward(self, x):
+        # x: [batch_size, seq_len, hidden_size]
+        # gate_proj: [batch_size, seq_len, intermediate_size]
+        # up_proj(x): [batch_size, seq_len, intermediate_size]
+        # return down_proj: [batch_size, seq_len, hidden_size]
         return self.down_proj(self.act_fn(self.gate_proj(x)) * self.up_proj(x))
 
 
@@ -231,6 +235,7 @@ class Attention(nn.Module):
             position_ids: Optional[torch.LongTensor] = None,  #
             past_key_value: Optional[Tuple[torch.Tensor]] = None,
             # 推理过程中才会用到, 用来传入截止上一个时刻解码时，之前所有时刻累计拼接得到的key_states和value_states
+            # 关于该参数的作用，建议先从图示进行理解，past_key_value_1.jpg 和 past_key_value_2.jpg
             output_attentions: bool = False,
             # 是否返回注意力权重，默认为False，事实上本代码也不支持返回注意力权重矩阵，因为memory_efficient_attention和
             # scaled_dot_product_attention两个函数的返回结果都不包含注意力权重矩阵。且output_attentions=True时本代码还会报错
@@ -239,8 +244,9 @@ class Attention(nn.Module):
             use_cache: bool = False,  # 在推理工程中是否使用上一时刻计算的缓存结果加速，默认情况为使用
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor], Optional[Tuple[torch.Tensor]]]:
 
-        bsz, q_len, _ = hidden_states.size() # [batch_size, seq_len, hidden_size]
+        bsz, q_len, _ = hidden_states.size()  # [batch_size, seq_len, hidden_size]
 
+        # 根据输入同时计算得到query_states, key_states 和 value_states
         proj = self.W_pack(hidden_states)  # [batch_size, seq_len, 3 * hidden_size]
         proj = proj.unflatten(-1, (3, self.hidden_size)).unsqueeze(0).transpose(0, -2).squeeze(-2)
         # proj: [batch_size, seq_len, 3 * hidden_size] ==> [batch_size, seq_len, 3, hidden_size]
@@ -248,32 +254,35 @@ class Attention(nn.Module):
         # ==> [3, batch_size, seq_len, hidden_size]
 
         # 分离得到 query_states, key_states, value_states 三者形状相同
-        # 在推理时使用 use_cache 时 query
+        # 在推理时使用 use_cache 时 query 除了解码第一个时刻时的输入是多个token，
+        # 后续每次都只会将上一个时刻的输出作为下一个时刻的输入，即query_len = 1
         query_states = proj[0].view(bsz, q_len, self.num_heads, self.head_dim).transpose(1, 2)
         key_states = proj[1].view(bsz, q_len, self.num_heads, self.head_dim).transpose(1, 2)
         value_states = proj[2].view(bsz, q_len, self.num_heads, self.head_dim).transpose(1, 2)
-        # [batch_size, seq_len, hidden_size] ==> [batch_size, seq_len, num_heads, head_dim]
+        # query_states:  [batch_size, seq_len, hidden_size] ==> [batch_size, seq_len, num_heads, head_dim]
         # ==> [batch_size, num_heads, seq_len, head_dim]
+
+        # past_key_value 不是None，表是使用了use_cache
         kv_seq_len = key_states.shape[-2]  #
         if past_key_value is not None:
-            kv_seq_len += past_key_value[0].shape[-2]  # 取上一次的序列长度
-        cos, sin = self.rotary_emb(value_states, seq_len=kv_seq_len)  # [1,1,seq_len,head_dim]
+            kv_seq_len += past_key_value[0].shape[-2]  # 取上一时刻中key_states和query_states的序列长度
+        cos, sin = self.rotary_emb(value_states, seq_len=kv_seq_len)  # [1,1,kv_seq_len,head_dim]
+
+        # 对当query_states, key_states 进行旋转位置编码
         query_states, key_states = apply_rotary_pos_emb(query_states, key_states, cos, sin, position_ids)
         # [batch_size,num_heads, seq_len, head_dim]
 
         if past_key_value is not None:
-            # reuse k, v, self_attention # 沿着序列长度即seq_len的维度拼接上一次的key和Value
-            # 分离得到 query_states, key_states, value_states 三者在训练以及推理但不使用 use_cache 时形状相同
+            # reuse k, v, self_attention # 沿着序列长度维度拼接上一次的key和Value
             key_states = torch.cat([past_key_value[0], key_states], dim=2)
             value_states = torch.cat([past_key_value[1], value_states], dim=2)
             # 上面两个形状均为: [batch_size,num_heads, past_key_len + seq_len, head_dim]
-            # 后面我们还是用 seq_len 来代指  key_states 和 value_states 的序列长度
-            #    用q_seq_len来代指query_states的序列长度，
-            #    因为这里cat拼接以后key_states和value_states的序列长度会变长 ，即 seq_len > q_seq_len
-            #    如果这里没有拼接，则seq_len == q_seq_len
+            # 后面我们还是用 kv_seq_len 来代指 key_states 和 value_states 的序列长度
+            #    用query_len来代指query_states的序列长度，
+            #    因为这里cat拼接以后key_states和value_states的序列长度会变长
 
         past_key_value = (key_states, value_states) if use_cache else None
-        print("attention_mask", attention_mask.shape)
+        # 对本次解码时的key_states, value_states进行缓存，在下一个时刻进行复用
         if xops is not None and self.training:
             # 加速计算过程
             attn_weights = None
@@ -285,23 +294,24 @@ class Attention(nn.Module):
             )
         else:
             # 采用Pytorch 2.0 版本的新特性，加速计算
-            # query_states [batch_size,num_heads,q_seq_len, head_dim]
-            # key_states [batch_size,num_heads, seq_len, head_dim]
-            # value_states [batch_size,num_heads, seq_len, head_dim]
+            # query_states [batch_size,num_heads,query_len, head_dim]
+            # key_states [batch_size,num_heads, kv_seq_len, head_dim]
+            # value_states [batch_size,num_heads, kv_seq_len, head_dim]
 
             with torch.backends.cuda.sdp_kernel(enable_flash=True, enable_math=True, enable_mem_efficient=True):
                 attn_output = F.scaled_dot_product_attention(query_states, key_states, value_states,
                                                              attn_mask=attention_mask)
-                # scaled_dot_product_attention 的计算过程
-                #     attn_weight = torch.softmax((Q @ K.transpose(-2, -1) / math.sqrt(Q.size(-1))) + attn_mask, dim=-1)
-                #           ==> [batch_size,num_heads,q_seq_len, head_dim] @ [batch_size,num_heads, head_dim, seq_len]
-                #           ==> [batch_size,num_heads,q_seq_len,seq_len]  + [batch_size, 1, q_seq_len,seq_len]
-                #           attn_weight = torch.dropout(attn_weight, dropout_p)
-                #     return attn_weight @ V
-                #           ==> [batch_size,num_heads,q_seq_len,seq_len] @ [batch_size,num_heads, seq_len, head_dim]
-                #           ==> [batch_size,num_heads,q_seq_len,head_dim]
-            attn_output = attn_output.transpose(1, 2)  # [batch_size, q_seq_len, num_heads, head_dim]
-        attn_output = attn_output.reshape(bsz, q_len, self.hidden_size)  # [batch_size, q_seq_len, hidden_size】
+                print("attention_maskattention_mask", attention_mask.shape)
+            # scaled_dot_product_attention 的计算过程
+            #     attn_weight = torch.softmax((Q @ K.transpose(-2, -1) / math.sqrt(Q.size(-1))) + attn_mask, dim=-1)
+            #           ==> [batch_size,num_heads,query_len, head_dim] @ [batch_size,num_heads, head_dim, kv_seq_len]
+            #           ==> [batch_size,num_heads,query_len,kv_seq_len]  + [batch_size, 1, query_len,kv_seq_len]
+            #     attn_weight = torch.dropout(attn_weight, dropout_p)
+            #     return attn_weight @ V
+            #           ==> [batch_size,num_heads,query_len,kv_seq_len] @ [batch_size,num_heads, kv_seq_len, head_dim]
+            #           ==> [batch_size,num_heads,query_len,head_dim]
+            attn_output = attn_output.transpose(1, 2)  # [batch_size, query_len, num_heads, head_dim]
+        attn_output = attn_output.reshape(bsz, q_len, self.hidden_size)  # [batch_size, query_len, hidden_size】
         attn_output = self.o_proj(attn_output)  # [batch_size, q_seq_len, hidden_size】
 
         if not output_attentions:
@@ -331,9 +341,9 @@ class DecoderLayer(nn.Module):
             use_cache: Optional[bool] = False,
     ) -> Tuple[torch.FloatTensor, Optional[Tuple[torch.FloatTensor, torch.FloatTensor]]]:
 
-        residual = hidden_states
+        residual = hidden_states  # [batch_size, seq_len, hidden_size]
 
-        hidden_states = self.input_layernorm(hidden_states)
+        hidden_states = self.input_layernorm(hidden_states)  # [batch_size, seq_len, hidden_size]
 
         # Self Attention
         hidden_states, self_attn_weights, present_key_value = self.self_attn(
@@ -342,14 +352,12 @@ class DecoderLayer(nn.Module):
             position_ids=position_ids,
             past_key_value=past_key_value,
             output_attentions=output_attentions,
-            use_cache=use_cache,
-        )
-        hidden_states = residual + hidden_states
-
+            use_cache=use_cache)
+        hidden_states = residual + hidden_states  # [batch_size, seq_len, hidden_size]
         # Fully Connected
         residual = hidden_states
-        hidden_states = self.post_attention_layernorm(hidden_states)
-        hidden_states = self.mlp(hidden_states)
+        hidden_states = self.post_attention_layernorm(hidden_states)  # [batch_size, seq_len, hidden_size]
+        hidden_states = self.mlp(hidden_states)  # [batch_size, seq_len, hidden_size]
         hidden_states = residual + hidden_states
 
         outputs = (hidden_states,)
@@ -391,7 +399,6 @@ class BaichuanModel(BaichuanPreTrainedModel):
         super().__init__(config)
         self.padding_idx = config.pad_token_id
         self.vocab_size = config.vocab_size
-
         self.embed_tokens = nn.Embedding(config.vocab_size, config.hidden_size, self.padding_idx)
         # 默认config.json中 padding_idx 为0
         self.layers = nn.ModuleList([DecoderLayer(config) for _ in range(config.num_hidden_layers)])
@@ -409,6 +416,15 @@ class BaichuanModel(BaichuanPreTrainedModel):
 
     # Copied from transformers.models.bart.modeling_bart.BartDecoder._prepare_decoder_attention_mask
     def _prepare_decoder_attention_mask(self, attention_mask, input_shape, inputs_embeds, past_key_values_length):
+        """
+        seq_length_with_past = seq_length
+        seq_length_with_past = seq_length_with_past + past_key_values_length
+        :param attention_mask: [batch_size, seq_length_with_past]
+        :param input_shape: [batch_size, seq_length]
+        :param inputs_embeds: [batch_size, seq_length, hidden_size]
+        :param past_key_values_length:
+        :return:
+        """
         # 这个函数是用来构造 注意力掩码，输出形状为[batch_size, 1, query_len, key_len]
         # 当模型训练时，query_len == key_len, 即此时的attention_mask是一个正方形
         #
@@ -418,45 +434,68 @@ class BaichuanModel(BaichuanPreTrainedModel):
         # [batch_size, seq_len] -> [batch_size, 1, query_len, key_len] # seq_len == key_len
         combined_attention_mask = None
         if input_shape[-1] > 1:
-            # 说明是在训练阶段 或者  推理阶段但是没有使用use_cache
-            # 在这两种情况下才需要 causal mask
+            # 有如下几种情况会走下面这段逻辑：
+            # ① 模型训练时，此时 _make_causal_mask 返回的就是我们之前介绍过的一个方阵，如：
+            #       tensor([[[[ 0.0000e+00, -3.4028e+38, -3.4028e+38],
+            #                 [ 0.0000e+00,  0.0000e+00, -3.4028e+38],
+            #                 [ 0.0000e+00,  0.0000e+00,  0.0000e+00]]]])
+            #       torch.Size([1, 1, 3, 3]) [batch_size, 1, seq_len, seq_len]
+            # ② 模型推理，且不使用 use_cache 时，
+            #       首先第一个时刻解码时同样需要对输入的序列（长度大于1）进行编码，此时_make_causal_mask
+            #       返回的也是一个类似上述方阵。且在后续解码过程中，由于没有使用use_cache,所以模型当前时刻
+            #       的输入会拼接上之前所有时刻的输入，所以同样需要掩盖，返回的仍旧是一个类似上述方阵。
+            # ③ 模型推理，且使用use_cache时，
+            #       首先第一个时刻解码时同样需要对输入的序列（长度大于1）进行编码，此时_make_causal_mask
+            #       返回的也是一个类似上述方阵。进一步，由于使用了 use_cache , 所以后续每个时刻模型的输入都只有上一个
+            #       时刻的输出，即序列长度为1，所以不会进入本逻辑
+
             combined_attention_mask = _make_causal_mask(
                 input_shape,
                 inputs_embeds.dtype,
                 device=inputs_embeds.device,
-                past_key_values_length=past_key_values_length,
-            )
-            print("combined_attention_mask", combined_attention_mask)
-            print("====")
+                past_key_values_length=past_key_values_length)
 
         if attention_mask is not None:
-            # 此处的条件会始终成立，因为_prepare_decoder_attention_mask函数前对attention_mask进行了处理
-            # [bsz, seq_len] -> [bsz, 1, tgt_seq_len, src_seq_len]
+            # 此处的条件会始终成立，因为在 _prepare_decoder_attention_mask 函数前对attention_mask进行了处理
+            # 传入进行来的
+            # [batch_size, seq_length_with_past] -> [batch_size, 1, query_len, seq_length_with_past]
             expanded_attn_mask = _expand_mask(attention_mask, inputs_embeds.dtype, tgt_len=input_shape[-1]).to(
-                inputs_embeds.device)  # 构造Attention Mask
-            print("expanded_attn_mask", expanded_attn_mask)
+                inputs_embeds.device)  # 全为0，用于当模型推理且使用use_cache时构造的注意力掩码
 
             combined_attention_mask = (
                 expanded_attn_mask if combined_attention_mask is None else expanded_attn_mask + combined_attention_mask
-            )  # 这里else 后面的+expanded_attn_mask似乎没有用，因为 combined_attention_mask is not None的时候expanded_attn_mask全是0
-        print("combined_attention_mask", combined_attention_mask)
-        print("combined_attention_mask", combined_attention_mask.shape)
+            )  # 这里else 后面的 expanded_attn_mask 似乎没有用，
+               # 因为 combined_attention_mask is not None的时候expanded_attn_mask全是0
         return combined_attention_mask
+        # 总结：①模型训练或（模型推理且use_cache = False）时返回的就是我们之前介绍过的一个方阵，
+        #        形状为[batch_size, 1, seq_len, seq_len]
+        #      ②模型推理且use_cache = True 时，在编码时返回的也是一个方阵，
+        #        后续解码每个时刻返回是一个全为0的结果，形状为 [1, 1, 1, seq_length_with_past]
+
+
+### *******************验证上面结论***************
+
+
+
+
+
 
     def forward(
             self,
             input_ids: torch.LongTensor = None,  # 原始输入索引id, 形状为 [batch_size, seq_len]
             attention_mask: Optional[torch.Tensor] = None,
             # attention mask, 即用于在训练阶段掩盖当前时刻t之后的信息（t+1,t+2,...）
-            # 默认为空，不传入，后面会构造
+            # 默认为空，不传入，后面会通过 _prepare_decoder_attention_mask 构造
             position_ids: Optional[torch.LongTensor] = None,  #
             past_key_values: Optional[List[torch.FloatTensor]] = None,
+            # 推理过程中才会用到, 用来传入截止上一个时刻解码时，之前所有时刻累计拼接得到的key_states和value_states
+            # 关于该参数的作用，建议先从图示进行理解，past_key_value_1.jpg 和 past_key_value_2.jpg
             inputs_embeds: Optional[torch.FloatTensor] = None,
-            # 直接传入embedding后的结果, input_ids后续不在进行embedding, 形状为[batch_size, seq_len, hidden_size]
-            use_cache: Optional[bool] = None,
+            # 直接传入embedding后的结果, input_ids将被忽略后续不再进行embedding, 形状为[batch_size, seq_len, hidden_size]
+            use_cache: Optional[bool] = None,  # 是否使用key, value 缓存， 加快推理时的计算速度
             output_attentions: Optional[bool] = None,
             output_hidden_states: Optional[bool] = None,
-            return_dict: Optional[bool] = None,
+            return_dict: Optional[bool] = None,  # 默认值为True
     ) -> Union[Tuple, BaseModelOutputWithPast]:
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
         # 返回结果是否输出注意力 True or False，默认情况下为False
@@ -464,13 +503,13 @@ class BaichuanModel(BaichuanPreTrainedModel):
         # 一部分是config类继承自，BaichuanConfig和 Transformers中的PretrainedConfig类，
         # 包含有 output_attentions, output_hidden_states 等相关默认参数
         # 如果需要输出可在config.json中添加一行 "output_attentions": true
-        output_hidden_states = (
-            output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
-        )
-        use_cache = use_cache if use_cache is not None else self.config.use_cache
-        print(use_cache,"=======----------------")
+        # 不过事实上本代码也不支持返回注意力权重矩阵，因为memory_efficient_attention和
+        # caled_dot_product_attention两个函数的返回结果都不包含注意力权重矩阵。
+        output_hidden_states = (output_hidden_states if output_hidden_states is not None
+                                else self.config.output_hidden_states)  # 默认为False
+        use_cache = use_cache if use_cache is not None else self.config.use_cache  # 默认为 True
 
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        return_dict = return_dict if return_dict is not None else self.config.use_return_dict  # 默认为 False
 
         # retrieve input_ids and inputs_embeds
         if input_ids is not None and inputs_embeds is not None:
@@ -486,30 +525,30 @@ class BaichuanModel(BaichuanPreTrainedModel):
         past_key_values_length = 0
 
         if past_key_values is not None:
-            past_key_values_length = past_key_values[0][0].shape[2]
+            past_key_values_length = past_key_values[0][0].shape[2]  # 得到上一轮的key value序列的长度
             seq_length_with_past = seq_length_with_past + past_key_values_length
+            # 本次当前时刻和上一时刻key, value拼接后的长度
 
         if position_ids is None:
             device = input_ids.device if input_ids is not None else inputs_embeds.device
-            position_ids = torch.arange(
-                past_key_values_length, seq_length + past_key_values_length, dtype=torch.long, device=device
-            )
+            position_ids = torch.arange(past_key_values_length, seq_length + past_key_values_length,
+                                        dtype=torch.long, device=device)
             position_ids = position_ids.unsqueeze(0).view(-1, seq_length)
+            # 这里需要注意的是, position_ids 的起始位置为 past_key_values_length，也就是说如果传入了past_key_values
+            # 那么past_key_values_length的起始值为上一个时刻key的长度
         else:
             position_ids = position_ids.view(-1, seq_length).long()
-
-        if inputs_embeds is None:  # 传入inputs_embeds后，便不在进行embedding，例如传入经过第三方词向量嵌入后的表示
+        print("position_ids ", position_ids.shape)
+        if inputs_embeds is None:
+            # 传入inputs_embeds后，便不在进行embedding，例如传入经过第三方词向量嵌入后的表示
             inputs_embeds = self.embed_tokens(input_ids)  # [batch_size, seq_len, hidden_size]
-        # print(input_ids.shape)
-        # print(inputs_embeds.shape)
-        # embed positions
+
         if attention_mask is None:  # 下面开始构造注意力掩码
-            attention_mask = torch.ones(
-                (batch_size, seq_length_with_past), dtype=torch.bool, device=inputs_embeds.device
-            )
+            attention_mask = torch.ones((batch_size, seq_length_with_past),
+                                        dtype=torch.bool, device=inputs_embeds.device)
+            # 初始化attention_mask [batch_size, seq_length_with_past]
         attention_mask = self._prepare_decoder_attention_mask(
-            attention_mask, (batch_size, seq_length), inputs_embeds, past_key_values_length
-        )
+            attention_mask, (batch_size, seq_length), inputs_embeds, past_key_values_length)
 
         hidden_states = inputs_embeds
 
@@ -786,6 +825,7 @@ class BaichuanForCausalLM(BaichuanPreTrainedModel):
         # 一部分是config类继承自，BaichuanConfig和 Transformers中的PretrainedConfig类，
         # 后这便包含有 output_attentions, output_hidden_states 等相关默认参数
         # 如果需要输出可在config.json中添加一行 "output_attentions": true
+        print("i am in BaichuanForCausalLM begin, input shape", input_ids.shape)
         output_hidden_states = (
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states)
         # 同 output_attentions 含义类似，如需返回可在config.json中添加一行 "output_hidden_states": true
@@ -826,6 +866,7 @@ class BaichuanForCausalLM(BaichuanPreTrainedModel):
             output = (logits,) + outputs[1:]
             return (loss,) + output if loss is not None else output
 
+        # print("i am in BaichuanForCausalLM end ",outputs.past_key_values[0][0].shape)
         return CausalLMOutputWithPast(
             loss=loss,
             logits=logits,
@@ -880,8 +921,11 @@ class BaichuanForCausalLM(BaichuanPreTrainedModel):
 
     def chat(self, tokenizer, messages: List[dict], stream=False,
              generation_config: Optional[GenerationConfig] = None):
+        print("i am in 883")
         generation_config = generation_config or self.generation_config
+        print("i am in 885")
         input_ids = build_chat_input(self, tokenizer, messages, generation_config.max_new_tokens)
+        print("input_ids: ", input_ids)
         if stream:
             streamer = TextIterStreamer(tokenizer, skip_prompt=True, skip_special_tokens=True)
             Thread(target=self.generate, kwargs=dict(
