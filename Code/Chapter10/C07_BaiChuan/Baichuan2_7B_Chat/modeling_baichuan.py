@@ -358,7 +358,7 @@ class DecoderLayer(nn.Module):
         residual = hidden_states
         hidden_states = self.post_attention_layernorm(hidden_states)  # [batch_size, seq_len, hidden_size]
         hidden_states = self.mlp(hidden_states)  # [batch_size, seq_len, hidden_size]
-        hidden_states = residual + hidden_states
+        hidden_states = residual + hidden_states  # [batch_size, seq_len, hidden_size]
 
         outputs = (hidden_states,)
 
@@ -369,6 +369,10 @@ class DecoderLayer(nn.Module):
             outputs += (present_key_value,)
 
         return outputs
+        # if output_attentions and use_cache :
+        #       outputs = (hidden_states, self_attn_weights, present_key_value)
+        # if use_cache:
+        #       outputs = (hidden_states, present_key_value)
 
 
 class BaichuanPreTrainedModel(PreTrainedModel):
@@ -465,20 +469,14 @@ class BaichuanModel(BaichuanPreTrainedModel):
             combined_attention_mask = (
                 expanded_attn_mask if combined_attention_mask is None else expanded_attn_mask + combined_attention_mask
             )  # 这里else 后面的 expanded_attn_mask 似乎没有用，
-               # 因为 combined_attention_mask is not None的时候expanded_attn_mask全是0
+            # 因为 combined_attention_mask is not None的时候expanded_attn_mask全是0
         return combined_attention_mask
         # 总结：①模型训练或（模型推理且use_cache = False）时返回的就是我们之前介绍过的一个方阵，
         #        形状为[batch_size, 1, seq_len, seq_len]
         #      ②模型推理且use_cache = True 时，在编码时返回的也是一个方阵，
         #        后续解码每个时刻返回是一个全为0的结果，形状为 [1, 1, 1, seq_length_with_past]
 
-
-### *******************验证上面结论***************
-
-
-
-
-
+    ### *******************验证上面结论***************
 
     def forward(
             self,
@@ -497,6 +495,8 @@ class BaichuanModel(BaichuanPreTrainedModel):
             output_hidden_states: Optional[bool] = None,
             return_dict: Optional[bool] = None,  # 默认值为True
     ) -> Union[Tuple, BaseModelOutputWithPast]:
+
+        # =============Step 1. 初始化相关控制参数 ==================
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
         # 返回结果是否输出注意力 True or False，默认情况下为False
         # 这里的self.config是上面BaichuanModel()初始化时传入的config对象, 它一部分成员变量来自于本地的config.json文件
@@ -511,6 +511,7 @@ class BaichuanModel(BaichuanPreTrainedModel):
 
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict  # 默认为 False
 
+        # =============Step 2. 获取相关形状参数 ==================
         # retrieve input_ids and inputs_embeds
         if input_ids is not None and inputs_embeds is not None:
             raise ValueError("You cannot specify both decoder_input_ids and decoder_inputs_embeds at the same time")
@@ -529,13 +530,15 @@ class BaichuanModel(BaichuanPreTrainedModel):
             seq_length_with_past = seq_length_with_past + past_key_values_length
             # 本次当前时刻和上一时刻key, value拼接后的长度
 
+        # =============Step 3. 构造模型相关输入 ==================
         if position_ids is None:
             device = input_ids.device if input_ids is not None else inputs_embeds.device
             position_ids = torch.arange(past_key_values_length, seq_length + past_key_values_length,
                                         dtype=torch.long, device=device)
             position_ids = position_ids.unsqueeze(0).view(-1, seq_length)
             # 这里需要注意的是, position_ids 的起始位置为 past_key_values_length，也就是说如果传入了past_key_values
-            # 那么past_key_values_length的起始值为上一个时刻key的长度
+            # 那么past_key_values_length的起始值为上一个时刻key的长度, 例如: 如果past_key_values_length = 5
+            # seq_length = 4, 则 position_ids 可能是 [5,6,7,8]
         else:
             position_ids = position_ids.view(-1, seq_length).long()
         print("position_ids ", position_ids.shape)
@@ -549,27 +552,30 @@ class BaichuanModel(BaichuanPreTrainedModel):
             # 初始化attention_mask [batch_size, seq_length_with_past]
         attention_mask = self._prepare_decoder_attention_mask(
             attention_mask, (batch_size, seq_length), inputs_embeds, past_key_values_length)
+        # [batch_size, 1, seq_len, seq_len] 或 [1, 1, 1, seq_length_with_past]
 
         hidden_states = inputs_embeds
 
         if self.gradient_checkpointing and self.training:
             if use_cache:
-                logger.warning_once(
-                    "`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`..."
-                )
+                logger.warning_once("`use_cache=True` is incompatible with "
+                                    "gradient checkpointing. Setting `use_cache=False`...")
                 use_cache = False
 
+        # =============Step 4. 多层编码器前向传播过程 ==================
         # decoder layers
-        all_hidden_states = () if output_hidden_states else None
-        all_self_attns = () if output_attentions else None
-        next_decoder_cache = () if use_cache else None
+        all_hidden_states = () if output_hidden_states else None  # 默认为 False
+        all_self_attns = () if output_attentions else None  # 默认为 False
+        next_decoder_cache = () if use_cache else None  # 默认为 True
 
         for idx, decoder_layer in enumerate(self.layers):
             if output_hidden_states:
-                all_hidden_states += (hidden_states,)
+                all_hidden_states += (hidden_states,)  # 存储每一层的隐藏状态， 默认不返回
 
-            past_key_value = past_key_values[idx] if past_key_values is not None else None  # 取每一层对应的缓存
-
+            # 因为在某个时刻解码时，如果use_cache为True，就会保存每一层计算得到的key_states和value_states
+            # 即保存在下面的 next_decoder_cache 参数中。所以这里需要分别要对应取每一层对应的 key_states 和value_states
+            # past_key_values[i][j] 标记第i层的key_states
+            past_key_value = past_key_values[idx] if past_key_values is not None else None
             if self.gradient_checkpointing and self.training:
 
                 def create_custom_forward(module):
@@ -587,40 +593,40 @@ class BaichuanModel(BaichuanPreTrainedModel):
                     None,
                 )
             else:
-                layer_outputs = decoder_layer(
-                    hidden_states,
-                    attention_mask=attention_mask,
-                    position_ids=position_ids,
-                    past_key_value=past_key_value,
-                    output_attentions=output_attentions,
-                    use_cache=use_cache,
-                )
+                layer_outputs = decoder_layer(hidden_states,
+                                              attention_mask=attention_mask,
+                                              position_ids=position_ids, # 这里组要注意， 每一个Layer都要输入位置编码
+                                              past_key_value=past_key_value,
+                                              output_attentions=output_attentions,  # 默认 False
+                                              use_cache=use_cache)
 
             hidden_states = layer_outputs[0]
+            # 取解每个码层最后的输出，形状为 [batch_size, seq_len, hidden_size]
 
             if use_cache:
                 next_decoder_cache += (layer_outputs[2 if output_attentions else 1],)
+                # if output_attentions: layer_outputs = (hidden_states, self_attn_weights, present_key_value)
+                # else: layer_outputs = (hidden_states, present_key_value)
 
             if output_attentions:
                 all_self_attns += (layer_outputs[1],)
 
         hidden_states = self.norm(hidden_states)
+        # 多层解码器最后一层的输出，形状为 [batch_size, seq_len, hidden_size]
 
         # add hidden states from the last decoder layer
         if output_hidden_states:
             all_hidden_states += (hidden_states,)
 
         next_cache = next_decoder_cache if use_cache else None
-        # print("return_dict:", return_dict)
-        # print("use_cache:", use_cache)
-        if not return_dict:
+        # 将本次解码缓存得到的key_states 和 value_states 传入给下一个时刻
+
+        if not return_dict: # 模型return_dict=True，即不以如下方式进行返回
             return tuple(v for v in [hidden_states, next_cache, all_hidden_states, all_self_attns] if v is not None)
-        return BaseModelOutputWithPast(
-            last_hidden_state=hidden_states,
-            past_key_values=next_cache,
-            hidden_states=all_hidden_states,
-            attentions=all_self_attns,
-        )
+        return BaseModelOutputWithPast(last_hidden_state=hidden_states,
+                                       past_key_values=next_cache,
+                                       hidden_states=all_hidden_states,
+                                       attentions=all_self_attns)
 
 
 class NormHead(nn.Module):
