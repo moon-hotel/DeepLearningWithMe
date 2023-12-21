@@ -301,7 +301,6 @@ class Attention(nn.Module):
             with torch.backends.cuda.sdp_kernel(enable_flash=True, enable_math=True, enable_mem_efficient=True):
                 attn_output = F.scaled_dot_product_attention(query_states, key_states, value_states,
                                                              attn_mask=attention_mask)
-                # print("attention_maskattention_mask", attention_mask.shape)
             # scaled_dot_product_attention 的计算过程
             #     attn_weight = torch.softmax((Q @ K.transpose(-2, -1) / math.sqrt(Q.size(-1))) + attn_mask, dim=-1)
             #           ==> [batch_size,num_heads,query_len, head_dim] @ [batch_size,num_heads, head_dim, kv_seq_len]
@@ -544,14 +543,15 @@ class BaichuanModel(BaichuanPreTrainedModel):
             position_ids = position_ids.unsqueeze(0).view(-1, seq_length)
             # 这里需要注意的是, position_ids 的起始位置为 past_key_values_length，也就是说如果传入了past_key_values
             # 那么past_key_values_length的起始值为上一个时刻key的长度, 例如: 如果past_key_values_length = 5
-            # seq_length = 4, 则 position_ids 可能是 [5,6,7,8]
+            # seq_length = 4, 则 position_ids 是 [5,6,7,8]
             # 在推理过程中，如果use_cache=True，那么在对输入进行编码时 position_ids 的形状为 [1, seq_len]，例如 [[0,1,2,3]]
             #             在后续逐时刻解码生成内容时，position_ids 的形状为 [1, 1], 第5个时刻为[[4]]， 第6个时刻为[[5]]
+            # 在推理过程中，如果use_cache=False，那么在对输入进行编码时 position_ids 的形状为 [1, seq_len]，例如 [[0,1,2,3]]
+            #             在后续逐时刻解码生成内容时，position_ids 的形状为 [1, seq_len+1], 第5个时刻为[[0,1,2,3, 4]]
+            #             第6个时刻为[[0,1,2,3,4,5]]
         else:
             position_ids = position_ids.view(-1, seq_length).long()
-        print("验证use_cache=Fasle时position_ids，和attention_mask，use_cache=",use_cache)
-        print("position_ids ", position_ids.shape)
-        print("position_ids ", position_ids)
+
         if inputs_embeds is None:
             # 传入inputs_embeds后，便不在进行embedding，例如传入经过第三方词向量嵌入后的表示
             inputs_embeds = self.embed_tokens(input_ids)  # [batch_size, seq_len, hidden_size]
@@ -563,9 +563,6 @@ class BaichuanModel(BaichuanPreTrainedModel):
         attention_mask = self._prepare_decoder_attention_mask(
             attention_mask, (batch_size, seq_length), inputs_embeds, past_key_values_length)
         # [batch_size, 1, seq_len, seq_len] 或 [1, 1, 1, seq_length_with_past]
-        print("attention_mask", attention_mask)
-        print("attention_mask", attention_mask.shape)
-        print("============")
         hidden_states = inputs_embeds
 
         if self.gradient_checkpointing and self.training:
@@ -845,14 +842,11 @@ class BaichuanForCausalLM(BaichuanPreTrainedModel):
         # 如果需要输出可在config.json中添加一行 "output_attentions": true
         # 不过事实上本代码也不支持返回注意力权重矩阵，因为memory_efficient_attention和
         # caled_dot_product_attention两个函数的返回结果都不包含注意力权重矩阵。
-        print("i am in BaichuanForCausalLM begin, input shape", input_ids.shape)
         output_hidden_states = (
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states)
         # 同 output_attentions 含义类似，如需返回可在config.json中添加一行 "output_hidden_states": true
-        print("验证1 BaichuanForCausalLM中 return_dict 的取值=======", return_dict)
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
-        # 以字典形式返回结果，此处返回的结果为Fasel
-        print("验证2 BaichuanForCausalLM中 return_dict 的取值=======", return_dict)
+        # 以字典形式返回结果，此处返回的结果为 True
 
         # decoder outputs consists of (dec_features, layer_state, dec_hidden, dec_attn)
         outputs = self.model(
@@ -868,9 +862,9 @@ class BaichuanForCausalLM(BaichuanPreTrainedModel):
         )
 
         hidden_states = outputs[0]  # BaichuanModel模块输出的hidden_state [batch_size, seq_len, hidden_size]
-        print("验证，use_cache = True 时，BaichuanForCausalLM中 hidden_states，预期输出形状为[1,1,4096]",hidden_states.shape)
-        logits = self.lm_head(hidden_states)  # 分类结果 [batch_size, seq_len, vocab_size]
-        print("验证，use_cache = True 时， BaichuanForCausalLM中 logits，预期输出形状为[1,vocab_size]", logits.shape)
+        # use_cache = True 时，输出形状为[1,1,4096]
+        logits = self.lm_head(hidden_states)  # 分类结果 [batch_size, seq_len, vocab_size] # 验证与预期一致
+        # use_cache = True 时， logits 输出形状为[1,vocab_size]
         loss = None
         if labels is not None: # 训练时，计算损失
             # Shift so that tokens < n predict n
@@ -890,8 +884,6 @@ class BaichuanForCausalLM(BaichuanPreTrainedModel):
             output = (logits,) + outputs[1:]
             return (loss,) + output if loss is not None else output
 
-        # print("i am in BaichuanForCausalLM end ",outputs.past_key_values[0][0].shape)
-        print("=======------------==========")
         return CausalLMOutputWithPast(
             loss=loss,
             logits=logits,
@@ -908,7 +900,7 @@ class BaichuanForCausalLM(BaichuanPreTrainedModel):
         while True:
             model_inputs = self.prepare_inputs_for_generation(input_ids, **model_kwargs)
             # forward pass to get next token
-            outputs = self(**model_inputs,return_dict=True,
+            outputs = self(**model_inputs,return_dict=True,   # 这个self()调用的就是BaichuanForCausalLM对应的forward()方法
                             output_attentions=output_attentions,
                             output_hidden_states=output_hidden_states,)
             next_token_logits = outputs.logits[:, -1, :]
@@ -929,12 +921,8 @@ class BaichuanForCausalLM(BaichuanPreTrainedModel):
         :param kwargs:
         :return:
         """
-        print(f"每次前向传播前输入模型的参数use_cache = {past_key_values != None} ：{kwargs}")
-        if past_key_values: # 编码是时为None，后续如果use_cache = True，则不为 None
-            print("prepare_inputs_for_generation",input_ids.shape)
-            print("prepare_inputs_for_generation",input_ids)
+        if past_key_values: # 编码是时为None，后续如果进行解码预测时use_cache = True，则不为 None
             input_ids = input_ids[:, -1:] # use_cache = Ture 时只取最后一个token，否则全部输入模型解码下一个时刻
-            print("prepare_inputs_for_generation", input_ids)
 
         position_ids = kwargs.get("position_ids", None)
         if attention_mask is not None and position_ids is None:
@@ -952,10 +940,10 @@ class BaichuanForCausalLM(BaichuanPreTrainedModel):
 
         model_inputs.update(
             {
-                "position_ids": position_ids,
+                "position_ids": position_ids, # 这里构造得到的position_ids就是模型最终需要的
                 "past_key_values": past_key_values,
                 "use_cache": kwargs.get("use_cache"),
-                "attention_mask": attention_mask,
+                "attention_mask": attention_mask, # 这里传入的attention_mask全是1，形状为[1,seq_len]，后续在BaichuanModel的_prepare_decoder_attention_mask()中还会进行处理
             }
         )
         return model_inputs
@@ -976,14 +964,10 @@ class BaichuanForCausalLM(BaichuanPreTrainedModel):
 
     def chat(self, tokenizer, messages: List[dict], stream=False,
              generation_config: Optional[GenerationConfig] = None):
-        print("i am in 883")
         # 在使用chat()之前会通过以下方式来得到配置类
         # model.generation_config = GenerationConfig.from_pretrained("./Baichuan2_7B_Chat")
         generation_config = generation_config or self.generation_config
-        print("i am in 885")
-        print(f"原始message: {messages}")
         input_ids = build_chat_input(self, tokenizer, messages, generation_config.max_new_tokens)
-        print("build_chat_input处理messages后的input_ids: ", input_ids)
         if stream:
             streamer = TextIterStreamer(tokenizer, skip_prompt=True, skip_special_tokens=True)
             Thread(target=self.generate, kwargs=dict(
@@ -993,5 +977,10 @@ class BaichuanForCausalLM(BaichuanPreTrainedModel):
             return streamer
         else:
             outputs = self.generate(input_ids, generation_config=generation_config)
+            # model_kwargs["use_cache"] = generation_config.use_cache
+            # site-packages/transformers/generation/utils.py
+            #transformers/generation/configuration_utils.py
+            # 推理时的生成模型默认配置，如果 generation_config.json没有提及的参数将会使用类GenerationConfig()中的默认值，如use_cache
+            # 模型结构如网络层数等配置参数依旧是读取config.json中的参数。共有的会以generation_config.json为准，如use_cache
             response = tokenizer.decode(outputs[0][len(input_ids[0]):], skip_special_tokens=True) # 解码成汉字
             return response
