@@ -543,7 +543,7 @@ class BaichuanModel(BaichuanPreTrainedModel):
             position_ids = position_ids.unsqueeze(0).view(-1, seq_length)
             # 这里需要注意的是, position_ids 的起始位置为 past_key_values_length，也就是说如果传入了past_key_values
             # 那么past_key_values_length的起始值为上一个时刻key的长度, 例如: 如果past_key_values_length = 5
-            # seq_length = 4, 则 position_ids 是 [5,6,7,8]
+            # seq_length = 4, 则 position_ids 是 [[5,6,7,8]]
             # 在推理过程中，如果use_cache=True，那么在对输入进行编码时 position_ids 的形状为 [1, seq_len]，例如 [[0,1,2,3]]
             #             在后续逐时刻解码生成内容时，position_ids 的形状为 [1, 1], 第5个时刻为[[4]]， 第6个时刻为[[5]]
             # 在推理过程中，如果use_cache=False，那么在对输入进行编码时 position_ids 的形状为 [1, seq_len]，例如 [[0,1,2,3]]
