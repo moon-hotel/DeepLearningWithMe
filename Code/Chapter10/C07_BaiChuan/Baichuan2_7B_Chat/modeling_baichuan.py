@@ -232,7 +232,7 @@ class Attention(nn.Module):
             # 形状为[batch_size, seq_len, hidden_size]
             attention_mask: Optional[torch.Tensor] = None,
             # 注意力矩阵，用于在训练时掩盖当前时刻之后的信息，形状为[batch_size, 1, query_len, key_len]
-            position_ids: Optional[torch.LongTensor] = None,  #
+            position_ids: Optional[torch.LongTensor] = None,  # [batch_size, seq_len]
             past_key_value: Optional[Tuple[torch.Tensor]] = None,
             # 推理过程中才会用到, 用来传入截止上一个时刻解码时，之前所有时刻累计拼接得到的key_states和value_states
             # 关于该参数的作用，建议先从图示进行理解，past_key_value_1.jpg 和 past_key_value_2.jpg
@@ -311,7 +311,7 @@ class Attention(nn.Module):
             #           ==> [batch_size,num_heads,query_len,head_dim]
             attn_output = attn_output.transpose(1, 2)  # [batch_size, query_len, num_heads, head_dim]
         attn_output = attn_output.reshape(bsz, q_len, self.hidden_size)  # [batch_size, query_len, hidden_size】
-        attn_output = self.o_proj(attn_output)  # [batch_size, q_seq_len, hidden_size】
+        attn_output = self.o_proj(attn_output)  # [batch_size, q_seq_len, hidden_size]
 
         if not output_attentions:
             attn_weights = None
@@ -542,7 +542,7 @@ class BaichuanModel(BaichuanPreTrainedModel):
                                         dtype=torch.long, device=device)
             position_ids = position_ids.unsqueeze(0).view(-1, seq_length)
             # 这里需要注意的是, position_ids 的起始位置为 past_key_values_length，也就是说如果传入了past_key_values
-            # 那么past_key_values_length的起始值为上一个时刻key的长度, 例如: 如果past_key_values_length = 5
+            # 那么past_key_values_length的起始值为上一个时刻key_states的长度, 例如: 如果past_key_values_length = 5
             # seq_length = 4, 则 position_ids 是 [[5,6,7,8]]
             # 在推理过程中，如果use_cache=True，那么在对输入进行编码时 position_ids 的形状为 [1, seq_len]，例如 [[0,1,2,3]]
             #             在后续逐时刻解码生成内容时，position_ids 的形状为 [1, 1], 第5个时刻为[[4]]， 第6个时刻为[[5]]
@@ -863,17 +863,17 @@ class BaichuanForCausalLM(BaichuanPreTrainedModel):
 
         hidden_states = outputs[0]  # BaichuanModel模块输出的hidden_state [batch_size, seq_len, hidden_size]
         # use_cache = True 时，输出形状为[1,1,4096]
-        logits = self.lm_head(hidden_states)  # 分类结果 [batch_size, seq_len, vocab_size] # 验证与预期一致
+        logits = self.lm_head(hidden_states)  # 分类结果 [batch_size, seq_len, vocab_size] #
         # use_cache = True 时， logits 输出形状为[1,vocab_size]
         loss = None
-        if labels is not None: # 训练时，计算损失
+        if labels is not None:  # 训练时，计算损失
             # Shift so that tokens < n predict n
-            shift_logits = logits[..., :-1, :].contiguous() # [batch_size, seq_len-1, vocab_size]
-            shift_labels = labels[..., 1:].contiguous() # [batch_size, seq_len-1]
+            shift_logits = logits[..., :-1, :].contiguous()  # [batch_size, seq_len-1, vocab_size]
+            shift_labels = labels[..., 1:].contiguous()  # [batch_size, seq_len-1]
             # Flatten the tokens
             loss_fct = CrossEntropyLoss()
-            shift_logits = shift_logits.view(-1, self.config.vocab_size) # [batch_size*seq_len-1, vocab_size]
-            shift_labels = shift_labels.view(-1)# [batch_size*seq_len-1]
+            shift_logits = shift_logits.view(-1, self.config.vocab_size)  # [batch_size*seq_len-1, vocab_size]
+            shift_labels = shift_labels.view(-1)  # [batch_size*seq_len-1]
             softmax_normalizer = shift_logits.max(-1).values ** 2
             z_loss = self.config.z_loss_weight * softmax_normalizer.mean()
             # Enable model parallelism
@@ -897,21 +897,22 @@ class BaichuanForCausalLM(BaichuanPreTrainedModel):
     ):
         """
         这个函数是用来在模型推理时构造输入，在 transformers/generation/utils.py sample()方法 中会调用这个函数，关键几行代码如下：
-        while True:
-            model_inputs = self.prepare_inputs_for_generation(input_ids, **model_kwargs)
-            # forward pass to get next token
-            outputs = self(**model_inputs,return_dict=True,   # 这个self()调用的就是BaichuanForCausalLM对应的forward()方法
-                            output_attentions=output_attentions,
-                            output_hidden_states=output_hidden_states,)
-            next_token_logits = outputs.logits[:, -1, :]
-            next_token_scores = logits_processor(input_ids, next_token_logits)
-            next_token_scores = logits_warper(input_ids, next_token_scores)
-            probs = nn.functional.softmax(next_token_scores, dim=-1)
-            next_tokens = torch.multinomial(probs, num_samples=1).squeeze(1)
-            ...
-            input_ids = torch.cat([input_ids, next_tokens[:, None]], dim=-1)
-            model_kwargs = self._update_model_kwargs_for_generation(
-                            outputs, model_kwargs, is_encoder_decoder=self.config.is_encoder_decoder)
+        def sample(self, ):
+            while True:
+                model_inputs = self.prepare_inputs_for_generation(input_ids, **model_kwargs)
+                # forward pass to get next token
+                outputs = self(**model_inputs,return_dict=True,   # 这个self()调用的就是BaichuanForCausalLM对应的forward()方法
+                                output_attentions=output_attentions,
+                                output_hidden_states=output_hidden_states,)
+                next_token_logits = outputs.logits[:, -1, :]
+                next_token_scores = logits_processor(input_ids, next_token_logits)
+                next_token_scores = logits_warper(input_ids, next_token_scores)
+                probs = nn.functional.softmax(next_token_scores, dim=-1)
+                next_tokens = torch.multinomial(probs, num_samples=1).squeeze(1)
+                ...
+                input_ids = torch.cat([input_ids, next_tokens[:, None]], dim=-1)
+                model_kwargs = self._update_model_kwargs_for_generation(
+                                outputs, model_kwargs, is_encoder_decoder=self.config.is_encoder_decoder)
 
 
         :param input_ids: 这里传入的input_ids是整个完整cat后的结果
@@ -921,8 +922,8 @@ class BaichuanForCausalLM(BaichuanPreTrainedModel):
         :param kwargs:
         :return:
         """
-        if past_key_values: # 编码是时为None，后续如果进行解码预测时use_cache = True，则不为 None
-            input_ids = input_ids[:, -1:] # use_cache = Ture 时只取最后一个token，否则全部输入模型解码下一个时刻
+        if past_key_values:  # 编码是时为None，后续如果进行解码预测时use_cache = True，则不为 None
+            input_ids = input_ids[:, -1:]  # use_cache = Ture 时只取最后一个token，否则全部输入模型解码下一个时刻
 
         position_ids = kwargs.get("position_ids", None)
         if attention_mask is not None and position_ids is None:
@@ -940,10 +941,11 @@ class BaichuanForCausalLM(BaichuanPreTrainedModel):
 
         model_inputs.update(
             {
-                "position_ids": position_ids, # 这里构造得到的position_ids就是模型最终需要的
+                "position_ids": position_ids,  # 这里构造得到的position_ids就是模型最终需要的
                 "past_key_values": past_key_values,
                 "use_cache": kwargs.get("use_cache"),
-                "attention_mask": attention_mask, # 这里传入的attention_mask全是1，形状为[1,seq_len]，后续在BaichuanModel的_prepare_decoder_attention_mask()中还会进行处理
+                "attention_mask": attention_mask,  # 这里传入的attention_mask全是1，形状为[1,seq_len]，
+                # 后续在BaichuanModel的_prepare_decoder_attention_mask()中还会进行处理
             }
         )
         return model_inputs
@@ -978,9 +980,9 @@ class BaichuanForCausalLM(BaichuanPreTrainedModel):
         else:
             outputs = self.generate(input_ids, generation_config=generation_config)
             # model_kwargs["use_cache"] = generation_config.use_cache
-            # site-packages/transformers/generation/utils.py
-            #transformers/generation/configuration_utils.py
+            # transformers/generation/utils.py
+            # transformers/generation/configuration_utils.py
             # 推理时的生成模型默认配置，如果 generation_config.json没有提及的参数将会使用类GenerationConfig()中的默认值，如use_cache
             # 模型结构如网络层数等配置参数依旧是读取config.json中的参数。共有的会以generation_config.json为准，如use_cache
-            response = tokenizer.decode(outputs[0][len(input_ids[0]):], skip_special_tokens=True) # 解码成汉字
+            response = tokenizer.decode(outputs[0][len(input_ids[0]):], skip_special_tokens=True)  # 解码成汉字
             return response
