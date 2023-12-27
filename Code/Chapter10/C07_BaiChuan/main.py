@@ -1,3 +1,11 @@
+"""
+文件名: Code/Chapter10/C07_BaiChuan/main.py
+创建时间: 2023/12/25 22:17 下午
+作 者: @空字符
+公众号: @月来客栈
+知 乎: @月来客栈 https://www.zhihu.com/people/the_lastest
+"""
+
 import torch
 from Baichuan2_7B_Chat.tokenization_baichuan import BaichuanTokenizer
 from Baichuan2_7B_Chat.configuration_baichuan import BaichuanConfig
