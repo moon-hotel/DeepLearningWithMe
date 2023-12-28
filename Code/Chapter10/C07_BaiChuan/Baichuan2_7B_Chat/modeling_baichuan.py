@@ -498,7 +498,7 @@ class BaichuanModel(BaichuanPreTrainedModel):
             use_cache: Optional[bool] = None,  # 是否使用key, value 缓存， 加快推理时的计算速度
             output_attentions: Optional[bool] = None,
             output_hidden_states: Optional[bool] = None,
-            return_dict: Optional[bool] = None,  # 默认值为True
+            return_dict: Optional[bool] = None,  # 默认后面的都是值为True
     ) -> Union[Tuple, BaseModelOutputWithPast]:
 
         # =============Step 1. 初始化相关控制参数 ==================
@@ -514,7 +514,7 @@ class BaichuanModel(BaichuanPreTrainedModel):
                                 else self.config.output_hidden_states)  # 默认为False
         use_cache = use_cache if use_cache is not None else self.config.use_cache  # 默认为 True
 
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict  # 默认为 False
+        return_dict = return_dict if return_dict is not None else self.config.use_return_dict  # 默认为 True
 
         # =============Step 2. 获取相关形状参数 ==================
         # retrieve input_ids and inputs_embeds
@@ -845,9 +845,8 @@ class BaichuanForCausalLM(BaichuanPreTrainedModel):
         output_hidden_states = (
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states)
         # 同 output_attentions 含义类似，如需返回可在config.json中添加一行 "output_hidden_states": true
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        return_dict = return_dict if return_dict is not None else self.config.use_rxeturn_dict
         # 以字典形式返回结果，此处返回的结果为 True
-
         # decoder outputs consists of (dec_features, layer_state, dec_hidden, dec_attn)
         outputs = self.model(
             input_ids=input_ids,  # [batch_size, seq_len]
@@ -858,7 +857,7 @@ class BaichuanForCausalLM(BaichuanPreTrainedModel):
             use_cache=use_cache,  # 默认为 True
             output_attentions=output_attentions,  # 默认为 False
             output_hidden_states=output_hidden_states,  # 默认为 False
-            return_dict=return_dict,  # 默认为 False
+            return_dict=return_dict
         )
 
         hidden_states = outputs[0]  # BaichuanModel模块输出的hidden_state [batch_size, seq_len, hidden_size]
