@@ -18,13 +18,14 @@ def test_BaichuanTokenizer():
     tokenizer = BaichuanTokenizer.from_pretrained("./Baichuan2_7B_Chat")
     inputs = tokenizer(["解释一下“温故而知新”", "好人一生平安"], return_tensors="pt", padding=True)
     print(inputs)
-    for i in[ 195,  5987,  2908, 92360, 92880, 93009, 26058, 92422, 92361,   196]:
+    for i in [195, 5987, 2908, 92360, 92880, 93009, 26058, 92422, 92361, 196]:
         print(tokenizer.decode(i))
-    print(tokenizer.decode(inputs['input_ids'][0])) # 温故而知新
+    print(tokenizer.decode(inputs['input_ids'][0]))  # 温故而知新
+
 
 def test_GenerationConfig():
     generation_config = GenerationConfig.from_pretrained("./Baichuan2_7B_Chat")
-    for k,v in generation_config.__dict__.items():
+    for k, v in generation_config.__dict__.items():
         print(f" {k} = {v}")
     #  max_length = 20
     #  max_new_tokens = 2048
@@ -76,6 +77,7 @@ def test_GenerationConfig():
     #  user_token_id = 195
     #  assistant_token_id = 196
 
+
 def test_BaichuanModel():
     config = BaichuanConfig.from_pretrained('./Baichuan2_7B_Chat')
     model = BaichuanModel(config)
@@ -84,7 +86,7 @@ def test_BaichuanModel():
     past_key_values = None
     print(config.return_dict)
     inp = torch.randint(0, 100, [1, 3])
-    for i in range(4,7):
+    for i in range(4, 7):
         print(f"第{i}个时刻输出: ")
         result = model(inp, past_key_values=past_key_values)
         print(f"last_hidden_state的形状: {result.last_hidden_state.shape}")  # [batch_size, seq_len, hidden_size]
@@ -95,8 +97,17 @@ def test_BaichuanModel():
         inp = torch.randint(0, 100, [1, 1])
 
 
+def test_BaichuanForCausalLM():
+    config = BaichuanConfig.from_pretrained('./Baichuan2_7B_Chat')
+    model = BaichuanForCausalLM(config)
+    seq = torch.randint(0, 100, [2, 32])
+    result = model(input_ids=seq, labels=seq, return_dict=True)
+    print(result.loss)  # tensor(12.2164, grad_fn=<AddBackward0>)
+    print(result[0])  # tensor(12.2164, grad_fn=<AddBackward0>)
+
 
 if __name__ == '__main__':
-    test_BaichuanTokenizer()
+    # test_BaichuanTokenizer()
     # test_BaichuanModel()
     # test_GenerationConfig()
+    test_BaichuanForCausalLM()
