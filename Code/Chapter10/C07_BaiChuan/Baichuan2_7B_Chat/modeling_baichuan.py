@@ -984,4 +984,5 @@ class BaichuanForCausalLM(BaichuanPreTrainedModel):
             # 推理时的生成模型默认配置，如果 generation_config.json没有提及的参数将会使用类GenerationConfig()中的默认值，如use_cache
             # 模型结构如网络层数等配置参数依旧是读取config.json中的参数。共有的会以generation_config.json为准，如use_cache
             response = tokenizer.decode(outputs[0][len(input_ids[0]):], skip_special_tokens=True)  # 解码成汉字
+            # len(input_ids[0]) 是为了把用户输入的问题给去掉
             return response
