@@ -904,6 +904,7 @@ class BaichuanForCausalLM(BaichuanPreTrainedModel):
                                 output_attentions=output_attentions,
                                 output_hidden_states=output_hidden_states,)
                 next_token_logits = outputs.logits[:, -1, :]
+                # logits 的形状为[batch_size, seq_len, vocab_size],这里是取最后一个时刻的预测值
                 next_token_scores = logits_processor(input_ids, next_token_logits)
                 next_token_scores = logits_warper(input_ids, next_token_scores)
                 probs = nn.functional.softmax(next_token_scores, dim=-1)
