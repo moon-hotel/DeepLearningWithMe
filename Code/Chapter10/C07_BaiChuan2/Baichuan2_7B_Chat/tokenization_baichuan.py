@@ -83,7 +83,6 @@ class BaichuanTokenizer(PreTrainedTokenizer):
             clean_up_tokenization_spaces=clean_up_tokenization_spaces,
             **kwargs,
         )
-        print("===,",vocab_file)
         self.vocab_file = vocab_file
         self.add_bos_token = add_bos_token
         self.add_eos_token = add_eos_token
