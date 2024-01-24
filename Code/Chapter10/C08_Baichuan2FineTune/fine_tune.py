@@ -125,7 +125,7 @@ class SupervisedDataset(Dataset):
         # 84465, 92381, 66, 2, -100, -100, -100, -100, -100, -100, -100, -100, -100, 17759, 93319, 92400, 92441, 93849,
         # 92786, 93676, 94859, 93151, 31506, 97923, 92336, 92335, 92383, 92373, 97905, 92381, 65, 92813, 94893, 94459,
         # 2537, 65, 10430, 26231, 66]
-        # labels to text: ['</s>', '<->', '<->', '<->', '<->', '<->', '<->', '<->', '<->', '<->', '<->', '<->', '▁',
+        # labels to text: ['</s>', '<->', '<->', '<->', '<->', '<->', '<->', '<->', '<->', '<->', '<->', '<->',
         # '好的', '，', '以下', '是你', '要求', '的内容', '：', '明月', '几', '时有', '？', '把酒', '问', '青天', '。', '\n',
         # '不知', '天上', '宫', '阙', '，', '今', '夕', '是何', '年', '。', '</s>', '<->', '<->', '<->', '<->', '<->', '<->',
         # '<->', '<->', '<->', '这首', '词', '作', '于', '宋', '神', '宗', '熙', '宁', '九年', '（', '1', '0', '7', '6', '）',
@@ -152,18 +152,16 @@ class SupervisedDataset(Dataset):
 
 
 def train():
-    parser = transformers.HfArgumentParser(
-        (ModelArguments, DataArguments, TrainingArguments)
-    )
+    parser = transformers.HfArgumentParser((ModelArguments, DataArguments, TrainingArguments))
     model_args, data_args, training_args = parser.parse_args_into_dataclasses()
-
-    model = BaichuanForCausalLM.from_pretrained(
+    # model_args 中只有 model_name_or_path 这一个参数
+    # data_args 中只有 data_path 这一个参数
+    model = BaichuanForCausalLM.from_pretrained(  # 载入预训练模型
         model_args.model_name_or_path,
         trust_remote_code=True,
-        cache_dir=training_args.cache_dir, )
-    # config = BaichuanConfig.from_pretrained('Baichuan2_7B_Base')
+        cache_dir=training_args.cache_dir)  # cache_dir 用于缓存下载的代码及预训练模型
+    # config = BaichuanConfig.from_pretrained(model_args.model_name_or_path)
     # model = BaichuanForCausalLM(config)
-    print("=======", model)
     tokenizer = BaichuanTokenizer.from_pretrained(
         model_args.model_name_or_path,
         use_fast=False,
@@ -188,11 +186,12 @@ def train():
 
     dataset = SupervisedDataset(
         data_args.data_path, tokenizer, training_args.model_max_length
-    )
-    trainer = transformers.Trainer(model=model, args=training_args, train_dataset=dataset, tokenizer=tokenizer)
+    )  # 构造数据集
+    trainer = transformers.Trainer(model=model, args=training_args,
+                                   train_dataset=dataset, tokenizer=tokenizer)
     trainer.train()
-    trainer.save_state()
-    trainer.save_model(output_dir=training_args.output_dir)
+    trainer.save_state()  # 保存整个trainer状态
+    trainer.save_model(output_dir=training_args.output_dir)  # 仅保存模型权重
 
 
 if __name__ == "__main__":
