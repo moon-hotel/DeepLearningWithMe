@@ -482,7 +482,6 @@ class BaichuanModel(BaichuanPreTrainedModel):
             all_hidden_states += (hidden_states,)
 
         next_cache = next_decoder_cache if use_cache else None
-        print("-------return_dict=",return_dict,"BaseModelOutputWithPast")
         if not return_dict:
             return tuple(v for v in [hidden_states, next_cache, all_hidden_states, all_self_attns] if v is not None)
         return BaseModelOutputWithPast(
@@ -679,11 +678,8 @@ class BaichuanForCausalLM(BaichuanPreTrainedModel):
         output_hidden_states = (
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
         )
-        print("======>>>>>>>>return_dict = ", return_dict,"BaichuanForCausalLM")
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
-        print("======>>>>>>>>return_dict = ",self.config.use_return_dict)
-
-
+        # 默认情况下 return_dict 为 True
         # decoder outputs consists of (dec_features, layer_state, dec_hidden, dec_attn)
         outputs = self.model(
             input_ids=input_ids,
@@ -696,12 +692,7 @@ class BaichuanForCausalLM(BaichuanPreTrainedModel):
             output_hidden_states=output_hidden_states,
             return_dict=return_dict,
         )
-        print(type(outputs))
         hidden_states = outputs[0]
-        print("===========lslkfjlsjflkjslk")
-        print(hidden_states.shape)
-        print("===========lslkfjlsjflkjslk")
-        print(outputs.last_hidden_state.shape)
         logits = self.lm_head(hidden_states)
         loss = None
         if labels is not None:
