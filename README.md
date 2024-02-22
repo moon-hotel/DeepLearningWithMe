@@ -62,5 +62,42 @@
 - [7.3 LSTM模型](https://mp.weixin.qq.com/s/OSLvVAWcpQBoRRyxEUKNgQ)
 - [7.4 GRU模型](https://mp.weixin.qq.com/s/foK4kYnTWWkHmRw0DkSm6w)
 ## 第 8 章 时序任务与模型融合
+- [8.1 TextCNN模型](https://mp.weixin.qq.com/s/q40ra671IoqRMSGzABCrAA)
+- [8.2 TextRNN模型](https://mp.weixin.qq.com/s/gAe1GNf3w6eD51n8q97vNg)
+- [8.3 CNN-RNN模型](https://mp.weixin.qq.com/s/US3eyWghAm_bBV5098jncQ)
+- [8.4 ConvLSTM模型](https://mp.weixin.qq.com/s/njzYllPh_GRPsRdAzDSs4A)
+- [8.5 3DCNN模型](https://mp.weixin.qq.com/s/fn4UG9RHSubgP9DJXJUlFg)
+- [8.6 STResNet模型](https://mp.weixin.qq.com/s/3JE0SyWq4YPAW1yxooRnVA)
 ## 第 9 章 自然语言处理
+- [9.1 NLP介绍](https://mp.weixin.qq.com/s/S5laSi5fQimh6cumtGq_BQ)
+- [9.2 Word2Vec模型](https://mp.weixin.qq.com/s/O1Q4jlvKoyTEhQwkkZXGWQ)
+- [9.3 Word2Vec训练与使用](https://mp.weixin.qq.com/s/aCkTdMP402qVEJu3EkQkmQ)
+- [9.4 GloVe模型](https://mp.weixin.qq.com/s/2VkGCAOn4pvoBnCxma350g)
+- [9.5 词向量的微调使用](https://mp.weixin.qq.com/s/6dcxgPW-ZsBKKdQXtt02Gw)
+- [9.6 FastText模型](https://mp.weixin.qq.com/s/rpSolSNoesKe_TglVxQA4A)
+- [9.7 序列到序列模型](https://mp.weixin.qq.com/s/5y-OrinUYcfY4e9m_qJ6Zw)
+- [9.8 序列模型评估指标]
+- [9.9 NMT模型]
+- [9.10 注意力机制]
+- [9.11 含注意力的NMT模型]
 ## 第 10章 现代神经网络
+- [10.1 ELMo模型]
+- [10.2 Transformer模型]
+- [10.3 Transformer网络结构]
+- [10.4 从零实现Transformer]
+- [10.5 Transfromer对联模型]
+- [10.6 BERT模型]
+- [10.7 从零实现BERT]
+- [10.8 BERT文本分类模型]
+- [10.9 BERT问题选择模型]
+- [10.10 BERT问题回答模型]
+- [10.11 BERT命名体识别模型]
+- [10.12 BERT从零训练]
+- [10.13 GPT-1模型]
+- [10.14 GPT-2与GPT-3模型]
+- [10.15 基于GPT-2的中文预训练模型]
+- [10.16 InstractGPT与ChatGPT]
+- [10.17 ChatGPT使用]
+- [10.18 百川大模型使用]
+- [10.19 百川大模型实现]
+- [10.20 GPT-4与GPTs介绍]
