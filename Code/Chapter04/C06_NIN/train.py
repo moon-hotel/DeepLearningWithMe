@@ -26,7 +26,7 @@ class ModelConfig(object):
     def __init__(self, ):
         self.batch_size = 128
         self.epochs = 60
-        self.learning_rate = 0.0005
+        self.learning_rate = 0.0003
         self.in_channels = 3
         self.num_classes = 10
         self.resize = None
@@ -36,7 +36,7 @@ class ModelConfig(object):
         self.summary_writer_dir = "runs/nin"
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         # 判断是否存在GPU设备，其中0表示指定第0块设备
-        logger_init(log_file_name='nin', log_level=logging.INFO, log_dir='log')
+        # logger_init(log_file_name='nin', log_level=logging.INFO, log_dir='log')
         logging.info("### 将当前配置打印到日志文件中 ")
         for key, value in self.__dict__.items():
             logging.info(f"### {key} = {value}")
@@ -50,7 +50,7 @@ def load_dataset(config, is_train=True):
     trans = transforms.Compose(trans)
     dataset = CIFAR10(root='~/Datasets/CIFAR10', train=is_train,
                       download=True, transform=trans)
-    iter = DataLoader(dataset, batch_size=config.batch_size, shuffle=True,
+    iter = DataLoader(dataset, batch_size=config.batch_size, shuffle=is_train, # 测试集可不用打乱
                       num_workers=1, pin_memory=False)  # 根据需要调整
     return iter
 
