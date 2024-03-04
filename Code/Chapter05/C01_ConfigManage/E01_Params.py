@@ -21,7 +21,7 @@ def train(train_file_path=os.path.join('data', 'train.txt'),
           epochs=5):
     dataset = get_dataset(train_file_path, val_file_path,max_sen_len,
                           test_file_path, split_sep, is_sample_shuffle)
-    model = get_model(max_sen_len, num_labels)
+    model = get_model(max_sen_len, num_labels) # 仅为示例，无法运行
 
 
 if __name__ == '__main__':
