@@ -13,7 +13,7 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 import torch
 import torch.nn as nn
-from DenseNet import densenet18
+from DenseNet import densenet21
 import logging
 import sys
 import os
@@ -60,7 +60,7 @@ def load_dataset(config, is_train=True):
 def train(config):
     train_iter = load_dataset(config, is_train=True)
     test_iter = load_dataset(config, is_train=False)
-    model = densenet18(config.num_classes)
+    model = densenet21(config.num_classes)
     if os.path.exists(config.model_save_path):
         logging.info(f" # 载入模型{config.model_save_path}进行追加训练...")
         checkpoint = torch.load(config.model_save_path)

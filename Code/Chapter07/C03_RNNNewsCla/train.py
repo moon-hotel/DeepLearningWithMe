@@ -17,7 +17,7 @@ from NewsRNN import NewsRNN
 
 sys.path.append("../../")
 from utils import TouTiaoNews
-
+from utils import logger_init
 
 class ModelConfig(object):
     def __init__(self):
@@ -33,6 +33,7 @@ class ModelConfig(object):
         self.model_save_path = 'model.pt'
         self.summary_writer_dir = "runs/model"
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        logger_init(log_file_name='log', log_level=logging.INFO, log_dir='log')
         # 判断是否存在GPU设备，其中0表示指定第0块设备
         logging.info("### 将当前配置打印到日志文件中 ")
         for key, value in self.__dict__.items():

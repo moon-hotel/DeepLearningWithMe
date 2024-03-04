@@ -13,6 +13,7 @@ import sys
 
 sys.path.append('../../')
 from utils import MyCorpus
+from utils import logger_init
 
 
 class ModelConfig(object):
@@ -27,7 +28,7 @@ class ModelConfig(object):
         self.epochs = 3
         self.model_save_path = 'word2vec.model'
         self.model_save_path_bin = 'word2vec.bin'
-
+        logger_init(log_file_name='log', log_level=logging.INFO, log_dir='log')
         logging.info("### 将当前配置打印到日志文件中 ")
         for key, value in self.__dict__.items():
             logging.info(f"### {key} = {value}")
@@ -59,5 +60,5 @@ def load_sougonews_wv(config):
 
 if __name__ == '__main__':
     config = ModelConfig()
-    # train(config)
+    train(config)
     load_sougonews_wv(config)

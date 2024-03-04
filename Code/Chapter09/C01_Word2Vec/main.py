@@ -13,6 +13,9 @@ import os
 
 sys.path.append('../../')
 from utils import DATA_HOME
+from utils import logger_init
+
+logger_init(log_file_name='log', log_level=logging.INFO, log_dir='log')
 
 
 def load_third_part_wv_en():

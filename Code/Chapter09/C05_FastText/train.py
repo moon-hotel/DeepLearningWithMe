@@ -9,6 +9,7 @@ import sys
 
 sys.path.append('../../')
 from utils import SougoNews
+from utils import logger_init
 import logging
 import fasttext
 
@@ -25,6 +26,7 @@ class ModelConfig(object):
         self.minn = 3
         self.maxn = 6
         self.model_save_path = f'sougou_vec_{self.vector_size}.bin'
+        logger_init(log_file_name='log', log_level=logging.INFO, log_dir='log')
         logging.info("### 将当前配置打印到日志文件中 ")
         for key, value in self.__dict__.items():
             logging.info(f"### {key} = {value}")

@@ -18,7 +18,7 @@ import torchvision.transforms as transforms
 
 sys.path.append("../../")
 from utils import KTHData
-
+from utils import logger_init
 
 class ModelConfig(object):
     def __init__(self):
@@ -33,11 +33,13 @@ class ModelConfig(object):
         self.height = 60  # 原始大小为120
         self.width = 80  # 原始大小为160
         self.time_step = 15
+        self.batch_first = True
         self.num_warmup_steps = 200
         self.model_save_path = 'model.pt'
         self.summary_writer_dir = "runs/model"
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         # 判断是否存在GPU设备，其中0表示指定第0块设备
+        logger_init(log_file_name='log', log_level=logging.INFO, log_dir='log')
         logging.info("### 将当前配置打印到日志文件中 ")
         for key, value in self.__dict__.items():
             logging.info(f"### {key} = {value}")
