@@ -443,6 +443,13 @@ class MR4ELMo(TouTiaoNews):
 class KTHData(object):
     """
     载入KTH数据集，下载地址：https://www.csc.kth.se/cvap/actions/ 一共包含6个zip压缩包
+    # http://www.csc.kth.se/cvap/actions/walking.zip
+    # http://www.csc.kth.se/cvap/actions/jogging.zip
+    # http://www.csc.kth.se/cvap/actions/running.zip
+    # http://www.csc.kth.se/cvap/actions/boxing.zip
+    # http://www.csc.kth.se/cvap/actions/handwaving.zip
+    # http://www.csc.kth.se/cvap/actions/handclapping.zip
+    # 下载完成以后分别解压，然后放到 DATA_HOME 的kth文件夹下
     """
     DATA_DIR = os.path.join(DATA_HOME, 'kth')
     CATEGORIES = ["boxing", "handclapping", "handwaving", "jogging", "running", "walking"]
