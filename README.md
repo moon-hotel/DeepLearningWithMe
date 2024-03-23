@@ -76,14 +76,15 @@
 - [9.5 词向量的微调使用](https://mp.weixin.qq.com/s/6dcxgPW-ZsBKKdQXtt02Gw)
 - [9.6 FastText模型](https://mp.weixin.qq.com/s/rpSolSNoesKe_TglVxQA4A)
 - [9.7 序列到序列模型](https://mp.weixin.qq.com/s/5y-OrinUYcfY4e9m_qJ6Zw)
-- [9.8 序列模型评估指标]
-- [9.9 NMT模型]
-- [9.10 注意力机制]
-- [9.11 含注意力的NMT模型]
+- [9.8 序列模型评估指标](https://mp.weixin.qq.com/s/S3t0Dt6SxblTYrjC55yDzQ)
+- [9.9 NMT模型](https://mp.weixin.qq.com/s/0T46pt8Wp6Io-qzphOIlYQ)
+- [9.10 注意力机制](https://mp.weixin.qq.com/s/u6CGRHBSVkS7TI3YIgndRg)
+- [9.11 含注意力的NMT模型](https://mp.weixin.qq.com/s/o7NtclC4r2CovTICtnlq4w)
+- [9.12 含注意力的RNN模型](https://mp.weixin.qq.com/s/RjghWxJoxPsdM4Xhfz-9LA)
 ## 第 10章 现代神经网络
-- [10.1 ELMo模型]
-- [10.2 Transformer模型]
-- [10.3 Transformer网络结构]
+- [10.1 ELMo模型](https://mp.weixin.qq.com/s/AlofyLyg_sPtHpzao0H2jg)
+- [10.2 Transformer模型](https://mp.weixin.qq.com/s/4vrU81JfgVDklRJkndiD4g)
+- [10.3 Transformer网络结构](https://mp.weixin.qq.com/s/sb8JyaXh9YdXu5KNtgsOfA)
 - [10.4 从零实现Transformer]
 - [10.5 Transfromer对联模型]
 - [10.6 BERT模型]
@@ -101,3 +102,73 @@
 - [10.18 百川大模型使用]
 - [10.19 百川大模型实现]
 - [10.20 GPT-4与GPTs介绍]
+
+# 插图
+
+<div align=center>
+<img width="300" src="imgs/240323220831.jpg"/> 
+</div>
+
+<div align=center>
+<img width="300" src="imgs/240323220906.jpg"/> 
+</div>
+
+<div align=center>
+<img width="300" src="imgs/240323220922.jpg"/> 
+</div>
+
+<div align=center>
+<img width="300" src="imgs/240323220942.jpg"/> 
+</div>
+
+<div align=center>
+<img width="300" src="imgs/240323220959.jpg"/> 
+</div>
+
+<div align=center>
+<img width="300" src="imgs/240323221023.jpg"/> 
+</div>
+
+<div align=center>
+<img width="300" src="imgs/240323221038.jpg"/> 
+</div>
+
+<div align=center>
+<img width="300" src="imgs/240323221052.jpg"/> 
+</div>
+
+<div align=center>
+<img width="300" src="imgs/240323221105.jpg"/> 
+</div>
+
+<div align=center>
+<img width="300" src="imgs/240323221119.jpg"/> 
+</div>
+
+<div align=center>
+<img width="300" src="imgs/240323221133.jpg"/> 
+</div>
+
+<div align=center>
+<img width="300" src="imgs/240323221146.jpg"/> 
+</div>
+
+<div align=center>
+<img width="300" src="imgs/240323221208.jpg"/> 
+</div>
+
+<div align=center>
+<img width="300" src="imgs/240323221224.jpg"/> 
+</div>
+
+<div align=center>
+<img width="300" src="imgs/240323221237.jpg"/> 
+</div>
+
+<div align=center>
+<img width="300" src="imgs/240323221300.jpg"/> 
+</div>
+
+<div align=center>
+<img width="300" src="imgs/240323221317.jpg"/> 
+</div>
