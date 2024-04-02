@@ -22,9 +22,9 @@ def visualization():
     plt.rcParams['ytick.direction'] = 'in'  # 刻度向内
     plt.rcParams['xtick.direction'] = 'in'  # 刻度向内
     plt.rcParams['font.sans-serif'] = ['Arial Unicode MS']
-    plt.scatter(c0[:, 0], c0[:, 1], marker='s',color='blue', label='类别0', s=50)
-    plt.scatter(c1[:, 0], c1[:, 1], marker='o',color='orange', label='类别1', s=50)
-    plt.scatter(c2[:, 0], c2[:, 1], marker='v',color='green', label='类别2', s=50)
+    plt.scatter(c0[:, 0], c0[:, 1], marker='s',color='blue', label='类别1', s=50)
+    plt.scatter(c1[:, 0], c1[:, 1], marker='o',color='orange', label='类别2', s=50)
+    plt.scatter(c2[:, 0], c2[:, 1], marker='v',color='green', label='类别3', s=50)
     # plt.rcParams['font.sans-serif'] = ['SimHei']  # 指定默认字体
     plt.legend(fontsize=13)
     plt.tight_layout()
