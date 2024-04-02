@@ -5,7 +5,7 @@
 
 # 《跟我一起学深度学习》
 
-- 作 者: @空字符
+- 作 者: @空字符（微信：nulls8）
 - 公众号: @月来客栈
 - 知 乎: @月来客栈 https://www.zhihu.com/people/the_lastest
 
@@ -85,9 +85,9 @@
 - [10.1 ELMo模型](https://mp.weixin.qq.com/s/AlofyLyg_sPtHpzao0H2jg)
 - [10.2 Transformer模型](https://mp.weixin.qq.com/s/4vrU81JfgVDklRJkndiD4g)
 - [10.3 Transformer网络结构](https://mp.weixin.qq.com/s/sb8JyaXh9YdXu5KNtgsOfA)
-- [10.4 从零实现Transformer]
-- [10.5 Transfromer对联模型]
-- [10.6 BERT模型]
+- [10.4 从零实现Transformer](https://mp.weixin.qq.com/s/LJSMMEReP638Ny0mb3Ov3Q)
+- [10.5 Transfromer对联模型](https://mp.weixin.qq.com/s/YKAuwm5RfUEHKZvIbGml0Q)
+- [10.6 BERT模型](https://mp.weixin.qq.com/s/S8cCRdzielk2O95K85czYA)
 - [10.7 从零实现BERT]
 - [10.8 BERT文本分类模型]
 - [10.9 BERT问题选择模型]
