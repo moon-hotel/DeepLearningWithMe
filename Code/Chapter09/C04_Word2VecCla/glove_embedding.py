@@ -18,6 +18,9 @@ import numpy as np
 sys.path.append('../../')
 from utils import DATA_HOME
 from utils import MR
+from utils import logger_init
+
+logger_init(log_file_name='log', log_level=logging.INFO, log_dir='log')
 
 
 def get_glove_embedding(vocab=None, embedding_size=50):
