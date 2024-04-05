@@ -1013,9 +1013,16 @@ class TaxiBJ(object):
 
 class SougoNews(object):
     DATA_DIR = os.path.join(DATA_HOME, 'SougoNews')
-    PROCESSED_FILE_PATH = os.path.join(DATA_DIR, 'SougoNews.txt')
 
-    def __init__(self, ):
+    def __init__(self, use_in='word2vec'):
+        """
+
+        :param use_in: 区分是用于word2vec的数据集还是用于fasttext的数据集
+                       因为word2vec中需要分词，而fasttext中不需要
+                       取值为 word2vec, fasttext
+        """
+        self.use_in = use_in
+        self.PROCESSED_FILE_PATH = os.path.join(self.DATA_DIR, f'SougoNews_{use_in}.txt')
         self.make_corpus()
 
     def make_corpus(self):
@@ -1032,7 +1039,10 @@ class SougoNews(object):
         num_file = 0
         num_failed = 0
         new_file = open(self.PROCESSED_FILE_PATH, 'w', encoding='utf-8')
+        logging.info(f"候选文件夹：{dir_lists}")
         for dir in dir_lists:
+            if '.' in dir:  # 排除掉文件夹（如：.DS_Store），或者文件（如：.txt）
+                continue
             dir_name = os.path.join(self.DATA_DIR, dir)  # 构造得到每个目录的路径
             file_lists = os.listdir(dir_name)
             logging.info(f" ## 正在读取文件夹【{dir_name}】中的文件")
@@ -1048,8 +1058,11 @@ class SougoNews(object):
                             if len(line) < 30:
                                 continue
                             line = unicodedata.normalize('NFKC', line)  # 将全角字符转换为半角字符
-                            seg = tokenize(line, cut_words=True)
-                            result += seg
+                            if self.use_in == 'word2vec':
+                                line = tokenize(line, cut_words=True)
+                            elif self.use_in == 'fasttext':
+                                line = [line]
+                            result += line
                 except:
                     num_failed += 1
                 new_file.write(" ".join(result) + '\n')
@@ -1058,10 +1071,12 @@ class SougoNews(object):
 
 
 class MyCorpus(SougoNews):
-    """An iterator that yields sentences (lists of str)."""
+    """An iterator that yields sentences (lists of str).
+    用于gensim训练word2vec
+    """
 
     def __init__(self):
-        super(MyCorpus, self).__init__()
+        super(MyCorpus, self).__init__(use_in='word2vec')
         pass
 
     def __iter__(self):

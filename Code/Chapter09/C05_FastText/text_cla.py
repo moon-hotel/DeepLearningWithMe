@@ -14,7 +14,9 @@ import torch.nn
 
 sys.path.append("../../")
 from utils import DATA_HOME
+from utils import logger_init
 
+logger_init(log_file_name='log', log_level=logging.INFO, log_dir='log')
 DATA_DIR = os.path.join(DATA_HOME, 'toutiao')
 FILE_PATH = [os.path.join(DATA_DIR, 'toutiao_train_fasttext.txt'),
              os.path.join(DATA_DIR, 'toutiao_val_fasttext.txt'),
@@ -49,8 +51,9 @@ def train(config):
 
 def inference(config):
     model = fasttext.load_model(config.model_save_path)
-    result = model.predict(['小米 生态 链出 新品 ， 智能 聪明 ： 有 了 它 ， 老婆 都 变懒 了',
-                            '哪些 瞬间 是 NBA 球员 回想起来 最 自豪 的 和 最 懊恼 的 ？'], k=2)
+    text = ['小米生态链出新品，智能聪明：有了它，老婆都变懒了',
+            '哪些瞬间是NBA球员回想起来最自豪的和最懊恼的？']
+    result = model.predict(text, k=2)
 
     logging.info(result)
 

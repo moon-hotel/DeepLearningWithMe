@@ -33,7 +33,7 @@ class ModelConfig(object):
 
 
 def train_fasttext(config):
-    data_loader = SougoNews()
+    data_loader = SougoNews(use_in='fasttext')
     logging.info(f" ## 模型开始训练......")
     model = fasttext.train_unsupervised(data_loader.corpus_path, model=config.model, dim=config.vector_size,
                                         minCount=config.min_count, epoch=config.epochs, minn=config.minn,
