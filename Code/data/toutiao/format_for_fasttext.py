@@ -8,22 +8,18 @@
 
 import sys
 
-sys.path.append("../../")
-from utils import tokenize
-
 label_name = ['故事', '文化', '娱乐', '体育', '财经', '房产', '汽车', '教育',
               '科技', '军事', '旅游', '国际', '股票', '三农', '游戏']
 
 
 def format(path=None):
-    new_path = path.split(".")[0] + "_fasttext2.txt"
+    new_path = path.split(".")[0] + "_fasttext.txt"
     file = open(new_path, 'w', encoding='utf-8')
     with open(path, encoding='utf-8') as f:
         for line in f:
-            sen, label = line.strip('\n').split('_!_')
-            sen = " ".join(tokenize(sen, cut_words=True))
+            text, label = line.strip('\n').split('_!_')
             label = label_name[int(label)]
-            file.write('_!_' + label + ' ' + sen + '\n')
+            file.write('_!_' + label + ' ' + text + '\n')
     file.close()
 
 
