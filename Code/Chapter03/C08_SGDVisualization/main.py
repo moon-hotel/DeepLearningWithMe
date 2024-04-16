@@ -31,7 +31,7 @@ def plot_countour():
     plt.rcParams['font.sans-serif'] = ['Arial Unicode MS']
     # CS = plt.contour(W1, W2, J, 10, colors='black')
     CS = plt.contour(W1, W2, J, 10)
-    plt.title("Stochastic Gradient Descent", fontsize=15)
+    # plt.title("Stochastic Gradient Descent", fontsize=15)
     plt.clabel(CS, inline=2, fontsize=12)
     plt.scatter(0, 0, s=60, c='black')
     plt.xlabel(r'$w_1$', fontsize=15)
@@ -56,7 +56,7 @@ def plot_countour():
     plt.scatter(0, 0, s=60, c='black')
     plt.xlabel(r'$w_1$', fontsize=15)
     plt.ylabel(r'$w_2$', fontsize=15)
-    plt.title("Mini-batch Gradient Descent", fontsize=15)
+    # plt.title("Mini-batch Gradient Descent", fontsize=15)
     p = np.array([-3.5, 3.5])  # 起始位置
     plt.scatter(p[0], p[1], c='black')
     for i in range(40):  # 梯度反方向，最速下降曲线
@@ -66,7 +66,7 @@ def plot_countour():
         plt.arrow(p[0], p[1], q[0], q[1], head_width=0.1, head_length=0.05)
         p += q  # 上一次的位置加上本次的梯度
 
-    plt.tight_layout()  # 调整子图间距
+    # plt.tight_layout()  # 调整子图间距
     plt.show()
 
 

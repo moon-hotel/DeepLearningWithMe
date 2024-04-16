@@ -26,8 +26,9 @@ def make_trapezoid_data():
 def visualization_loss(losses):
     plt.plot(range(len(losses)), losses)
     plt.ylim(-0.1, 0.5)
-    plt.xlabel('epochs')
-    plt.ylabel('loss')
+    plt.xlabel('迭代次数',fontsize=15)
+    plt.ylabel('损失值',fontsize=15)
+    plt.rcParams['font.sans-serif'] = ['Arial Unicode MS']
     plt.show()
 
 

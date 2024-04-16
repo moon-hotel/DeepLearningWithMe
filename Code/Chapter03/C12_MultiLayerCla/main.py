@@ -157,8 +157,9 @@ def evaluate(x, y, net, w1, b1, w2, b2, w3, b3):
 def visualization_loss(losses):
     import matplotlib.pyplot as plt
     plt.plot(range(len(losses)), losses)
-    plt.xlabel('epochs', fontsize=15)
-    plt.ylabel('loss', fontsize=15)
+    plt.xlabel('迭代次数', fontsize=15)
+    plt.ylabel('损失值', fontsize=15)
+    plt.rcParams['font.sans-serif'] = ['Arial Unicode MS']
     # plt.ylim(-.05, 0.5)
     plt.tight_layout()
     plt.show()
