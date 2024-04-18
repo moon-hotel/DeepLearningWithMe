@@ -10,6 +10,7 @@ def visual(y1, y2, line_names=None):
     length = 30
     plt.plot(range(len(y1[:length])), y1[:length], label=line_names[0], linestyle='--')
     plt.plot(range(len(y1[:length])), y2[:length], label=line_names[1])
+    plt.rcParams['font.sans-serif'] = ['Arial Unicode MS']
     plt.legend()
     plt.show()
 
@@ -655,5 +656,5 @@ if __name__ == '__main__':
                    0.160696238,
                    0.263086319, 0.505802274, 0.290182292, 0.319459081, 0.423606783, 0.186952978, 0.337138474,
                    0.196671486]
-    # visual(no_random_loss, with_random_loss, ['no_random_loss', 'with_random_loss'])
-    visual(no_random_loss, frozen_loss, ['no_frozen_loss', 'frozen_loss'])
+    visual(no_random_loss, with_random_loss, ['no_random_loss', 'with_random_loss'])
+    # visual(no_random_loss, frozen_loss, ['no_frozen_loss', 'frozen_loss'])

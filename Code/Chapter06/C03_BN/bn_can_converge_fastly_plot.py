@@ -456,8 +456,9 @@ if __name__ == '__main__':
     plt.plot(range(len(history_loss)), history_loss_bn, '--', label='with BN')
     plt.plot(range(len(history_loss)), history_loss, label='without BN')
 
-    plt.legend(loc='upper right')
-    plt.xlabel('batches', fontsize=13)
-    plt.ylabel('loss', fontsize=13)
+    plt.legend(loc='upper right',fontsize=15)
+    plt.xlabel('迭代次数', fontsize=15)
+    plt.ylabel('损失值', fontsize=15)
+    plt.rcParams['font.sans-serif'] = ['Arial Unicode MS']
     plt.legend()
     plt.show()
