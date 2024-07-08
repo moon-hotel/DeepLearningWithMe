@@ -21,8 +21,9 @@ def plot_countour():
     plt.rcParams['xtick.direction'] = 'in'  # 刻度向内
 
     plt.plot(W, J, c='black')
-    plt.scatter(-0.7584, -1.8747, marker='*', c='black', s=80, label='global optimum ')  # 非实际计算
-
+    # plt.scatter(-0.7584, -1.8747, marker='*', c='black', s=80, label='global optimum ')  # 非实际计算
+    plt.scatter(-0.7584, -1.8747, marker='*', c='black', s=80, label='全局最优解')  # 非实际计算
+    plt.rcParams['font.sans-serif'] = ['Arial Unicode MS']
     p = np.array([-4.8, f_non_convex(-4.8)])  # 起始位置 1
     plt.annotate('A',(-4.5,4.8),fontsize=12)
     plt.scatter(p[0], p[1], c='black')
