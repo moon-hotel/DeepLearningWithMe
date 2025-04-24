@@ -9,99 +9,188 @@
 - 公众号: @月来客栈
 - 知 乎: @月来客栈 https://www.zhihu.com/people/the_lastest
 
-著名数学家华罗庚曾说：数无形时少直觉，形少数时难入微。本专栏所有算法介绍均会遵循先通过图示结构介绍其背后的思想原理，然后再通过代码来刻画其细节之处，做到真正的“数形”结合，让你真的能看得懂、学得会、写得出，无论你是初学者还是有一定经验的从业者，相信都能够从中获益! 每周二、四早更新，节假日不调休！
+<div align=center>
+<img width="600" src="imgs/20250327221901.jpg"/> 
+</div>
+
+
+# 前言
+
+作为《跟我一起学机器学习》的姊妹篇，两年之后《跟我一起学深度学习》一书也终于出版了。北宋大家张载有言：“为天地立心，为生民立命，为往圣继绝学，为万世开太平”，这两部编著虽然没有这样的宏伟愿景，但在它们的编写过程中我们自始至终都秉持着”为往圣继绝学“的想法在进行。
+
+作为机器学习方向的一个重要分支，深度学习在近年来的发展可谓是大放异彩。随着深度学习技术地不断发展，与之相关的技术应用已经深入渗透到了我们日常生活的方方面面，从医疗保健、金融服务到零售、交通再到智能助理、智能家居等等，尤其是在以GPT为代表的大语言模型出现以后，深度学习技术的影子更是无处不在。如今，利用ChatGPT来作为日常生产力工具更是成为了一种共识。例如在本书的成文过程过中ChatGPT就为我们提供了不少的灵感和启示，部分内容也是在ChatGPT的辅助下所完成，而这在10年乃至5年前都是难以想象的。也正因如此，对于这些热门应用背后技术的探索便逐渐成为了计算机行业及高校所追捧的对象。但对于绝大多数初学者来讲，想要跨入深度学习这一领域依旧存在着较高的门槛。所以，一本数形结合、动机原理并重、细致考究的入门书籍对于初学者来讲就显得十分必要了。
+
+尽管目前市面上已经存在着大量类似书籍，并且每年还以数本的速度递增，但现有书籍的不足之处在于往往太过高估了学生们的学习能力。首先，这类书籍往往都只是罗列了一堆名词概念、抽象晦涩的数学公式或是枯燥冗长的代码，而这对于初学者或是数学基础比较薄弱的学生来说是极为糟糕的，作为过来人我们对此深有体会。其次，这类书籍在介绍各个算法时仅仅只是做到了知其然而不知其所以然，并没有介绍每个算法模型出现的背景和动机，仿佛它们都是一个个从天而降的独立个体彼此之间毫无前因后果的联系。最后，对于算法原理或实现的细节之处并没有充分把握，往往都是一笔带过，而这就导致了初学者总是有一种似是而非朦朦胧胧的感觉。
+
+**“数无形时少直觉，形少数时难入微，数形结合百般好”，这是本书在编写过程中所遵循的第一大原则。**在学习深度学习相关内容的过程中，如果只看论文那我们只能了解到算法模型的整体思想但无法精确刻画其中的细节之处；但如果只看代码又会发现均是各种矩阵之间的四则运算但并不知道其中的含义。因此，本书在写作之初就始终秉持着要以数形结合的方式来介绍每一个算法模型，即先通过图示直观地来介绍模型的整体思想和原理，再通过实际的数学计算过程或代码来刻画其中的细节和模糊之处。用图形去形象化，用代码去唯一化，做到真正“数+形”的结合，让各位读者能够真正的做到看得懂、学得会、写得出。为了将各个算法的建模原理表述清楚，本书使用近400余幅示意插图。
+
+为了直观感受卷积操作的计算过程，我们绘制了全部4种情况下的卷积计算示意图；为了厘清GoogLeNet中各个网络层的参数及输出信息，我们重新绘制了更加详细的网络结构图并进行了全方位的标记；为了讲清楚多头注意力中”多头“的概念，我们完整绘制了整个注意力机制的计算流程图；为了讲清楚BERT模型的预训练任务和4大经典下游任务的构建原理，我们对于每个任务模型和数据集构建流程都进行图例绘制；为了介绍百川大模型内部的原理机制，我们又根据官方开源的代码实现绘制了其网络结构图，以便让读者能够从第一眼就能把握其整体的技术架构；为了讲清楚大模型对话场景中的Key-Value缓存机制，我们根据Transformers框架中的实现代码绘制了对应原理图。这样的图示还有很多很多，因为我们始终相信，能够用眼睛看到的一定是最直观、最容易理解的。
+
+**“知其然，更要知其所以然”，这是本书在编写过程中所遵循的第二大原则。**任何一个算法的提出都不会是凭空捏造或无中生有，它要么是为了解决新场景下的问题，要么是为了对已有算法模型的改进，因此明白一个算法模型背后的动机就显得格外重要。一方面这样我们能更好地理解作者的想法以及与其它算法模型之间的联系，另一方面这也可以学习如何去讲好一个故事。所以我们不仅需要知道一项技术的原理，还需要知道为什么出现了这种技术、它的动机是什么、它需要解决什么样的问题。这样才更有利于我们了解整个技术的发展脉络并形成一个合理的思考方向。
+
+因此，本书在行文过程中对于每一个算法模型的介绍都遵循了“动机+原理”的方式进行，即先梳理其提出时的背景动机，然后再介绍其具体的实现原理，而不是直愣愣地开始就某个算法模型进行介绍以至于前后衔接生硬。这也将使得各位读者不仅仅能够学会一个算法的原理和使用，同时还能知道它所提出的契机，养成这样的思维习惯对于一些读者后续的论文写作也是百利而无一害。
+
+**“如履薄冰，有理有据”，这是本书在编写过程中所遵循的第三大原则。**在本书签订之初我们就预留了充分的时间，约定15个月交稿，计划12个月完稿，而实际14个月完成，目的就是为了能在一个轻松的氛围下完成写作。不过如果再算上之前在理解Transformer（2021年3月~2021年8月）和BERT（2021年8月~2022年4月）这两个模型所花费的13个月时间，整本书总共算是历经了27个月。所以我们也时常告诫自己切莫心急浮躁、切莫急功近利、切莫误人子弟，要为我们写下的每一句话、每一个字负责。同时，在本书的编写过程中对于每个重要细节的把握我们也会进行多方求证力争在理解上不会出现太大偏差。对于同一个模型的实现过程我们通常都会参考不同框架中的实现源码，TensorFlow、PyTorch、Transformers以及论文作者的实现等等，然后再根据这些代码整理出一份保留核心逻辑且适合初学者学习的示例代码。
+
+例如在介绍BERT模型的实现过程时，我们先后阅读了GoogleResearch、PyTorch和Transformers框架中的相关实现过程；为了弄清楚fastText模型中关于中文$N$-gram的构建方式，我们在官方开源项目的`dictionary.cc`文件中找到了佐证；为了画出ELMo模型的真实结构图，我们在官方的Allennlp库中见到了答案；为了弄清楚大模型对话场景中模型在推理时的具体解码过程，我们几番周折终于在transformers库的`generation/utils.py`模块中找到了示例；甚至就连GPT这个简称的来历我们也都进行了细致的考究，而这些本都可以一笔带过。
+
+对于“GPT”这个简称的来历，它到底应该是“Generative Pre-Training”的缩写，还是“Generative Pre-training Transformer”的缩写，我们也曾反复思考过很多次。此时有读者可能会说：这还用想？当然是后者，因为GPT使用到的是Transformer中解码器的部分。可当时我们并不这样认为。首先GPT表示生成式预训练模型“Generative Pre-Training”也并无不可，因为它的确是第一个大规模语料下的生成式预训练模型；其次GPT-1的论文中并没有明确交代“T”的代指，甚至全文中根本没有出现GPT这一缩写，反而从标题“Improving Language Understanding by Generative Pre-Training” 来看它更符合是“Generative Pre-Training”的缩写；最后，我们检索OpenAI 官网的所有论文和内容后，也并没有明确发现GPT的来由。但对于这件事的疑惑并没有停止。在我们写作GPT-2的相关内容时意外发现了论文第二作者 Jeffrey Wu 的 GitHub账户。在浏览他的所有项目时我们意外发现了一个名为名为minGPT的工程，其简介中赫然写到一句描述："A minimal PyTorch re-implementation of the OpenAI GPT (Generative Pretrained Transformer) training" ，到这里总算是找到了官方对于GPT简称的认证。
+
+当然，上面提到的细节之处本书中还有很多很多，各位读者可以在阅读学习的过程中自行慢慢体会。本书的目的只有一个，那就是所有的坑都让我们先来踩，所有的错都先让我们来犯，各位读者只需要跟随本书的足迹一步一步踏入深度学习的大门即可。不过遗憾的一方面是，这本书也只能刚好带领各位读者进入深度学习的大门，至于怎么将这些技术用得更好、用得更出色还需要各位读者在实际使用中进行反复锤炼。
+
+## 致谢
+
+首先感谢清华大学出版社赵佳霓编辑的耐心指点，以及对本书出版的推动。 其次感谢在本书中所引用文献的作者，没有你们的付出也不会有本书的出版。如果说我们看得比别人更远一些，那只是因为我站在巨人的肩膀上。本书在写作过程中从《动手学深度学习》、《神经网络与深度学习》、以及斯坦福大学的CS224N和CS231N中获得了不少灵感，在此特意向李沐老师和邱锡鹏老师及相关作者表示感谢，感谢这些深度学习领域中的巨人。同时我们也要感谢我们的家人在身后默默地支持我们。最后我也要感谢我自己，感谢那个曾经无数次想要放弃但依旧坚持下来的自己。
+
+写好一本书不容易，写好一本能让初学者读懂且有所裨益的书更不容易。由于我们才学和资历尚浅，书中也一定存在着这样或那样目前尚未发现的错误，因此还请各位读者海涵与见谅。同时，也欢迎各位同行前辈对本拙作的不吝指教。在今后的岁月里，我们也将不遗余力地持续去打磨这两本书中的内容，力争以最直观、最简洁和最有新意的语言将各个算法的原理与实现呈现在各位读者面前，继续秉持着“为往圣继绝学”的初心。青山不改，绿水长流，我们月来客栈见！
+
+王 成
+
+2024年3月 于上海
+
+## 推荐语
+
+“数无形时少直觉，形少数时难入微，数形结合百般好”，其实作者还遗漏了后面半句“隔离分家万事休”。我们在看一篇论文时往往只能了解他背后的核心思想，如果让10个人同时来实现一篇论文那一定会有10种不同的结果。一个模型少了图示难以理解，少了代码又难以消歧，而《跟我一起学深度学习》一书恰好将两者有效地结合了起来，是一本非常好的深度学习入门书籍。
+
+——李旭涛，哈尔滨工业大学计算机科学与技术学院副院长、教授、博士生导师、国家级青年人才
+
+本书特别适合非计算机专业，但从事交叉学科研究者学习和实践。当今，每个学科都被AI深刻地影响着，如何快速掌AI工具并服务于其他学科研究？该书给出了很好的知识组织方式，由浅入深，从原理讲解到代码实现都一应俱全。
+——刘沛丰，清华大学经济学研究所助理研究员，高级工程师
+
+从《跟我一起学深度学习》一书的序言中我深深地感受到了作者那份朴实和认真的劲，原本很多可以一笔带过的内容在作者看来都必须要做到有理有据，作者能在工作之余潜心完成这部编著是一件很值得称赞的事情。《跟我一起学深度学习》文字朴实直白，图示结构清晰，作为初学者的入门读物我推荐它。
+
+——杨小飞，广州大学电子与通信工程学院讲师、澳门大学博士后
+
+深度学习技术是这一次人工智能浪潮的核心技术，其影响和应用正日益深入到各个领域，如何更好的学习和掌握这项技术，对有志于从事人工智能相关领域的人士尤为关键。《跟我一起学深度学习》一书通过近400余幅插图清晰展示了各个算法的思想原理，并且做到了“数”+“形”的结合，很有新意，让原本晦涩难懂的结构一下变得豁然开朗，非常适合初学者使用。
+
+——李一鸣，深睿医疗联合创始人兼CTO。
+
+## 读者评论
+
+“这两天搜资料看到您的博客，看完了您的PDF，思路清晰言语通俗详细真的十分震撼，感觉自己读关于BERT的论文的PTSD都被您治好了，而且一开始从博客进入您主页的时候简直不敢相信居然是如此清心静心的客栈，真的好喜欢您的博客！” ——@麦田云山
+
+“毫不夸张，可以说是我NLP的引路人。来MSRA实习，做的工作和bert/transformer相关，找了很多资料，发现他的最好。不仅是入门，现在也是常读常新。它的文章内容详实，基本上完美解决我所有疑点，并且在github上开源了代码，细节一目了然。这么良心的博主我不允许他默默无闻，他真的是在认真做内容。” ——@李可
+
+“描述地十分生动形象！！对我这种小白来说救了大命了！！博主真的太棒了，把生硬的知识变成通俗易懂的，真的超牛得好吧！！！”——@xylkgsa
+
+“好厉害！图很清楚！！！感谢大佬！！！真的看英语的纯代码和英语的注释人都要傻了。”——@十八
+
+“感谢，写的很好，看懂了！之前从来没深入考虑过这些具体实现是怎么做得、为什么。”——@Scorpio
+
+“您就是我求学生涯中的太阳。”——@新世纪炼丹道士
+
+“终于遇到会说人话的了，大佬请受我一拜。”——@凹总宅
+
+“哇塞，发现了一个宝藏级博主，现在研一，没有导师指导，只能盲人摸象。”——@Ethan
+
+“我为什么没早点看到你这篇文章！写的好详细！”——@111
+
+“写得非常棒，一直没搞清楚InputChannel是怎么被消除的，看了多通道单卷积核的例子，一下子明白了~”@紫吟玉
+
+“搜tensorboard使用的时候看到这篇讲解得非常清晰的好文，于是翻上去看作者是谁，居然是你！你还有多少惊喜是我们这些粉丝不知道的。”——@我见青山多妩媚
+
+“写的真的太好了，通俗易懂，容易上手，保姆式教程，看过很多博客文章和视频，都不如这篇讲的细，已经把这个PDF刷了N遍了！”——@小黄人
+
+“写得特别好，特别适合小白来理解注意力机制，看了好多都似懂非懂，作者这篇解释得很好理解，感谢！”——@小哀2016
+
+“字少但句句精华啊，尤其是最后对比两者对新输入的处理那里，正中我疑惑的要害。对LSTM和GRU有了更深的理解，感谢！！”——@妙方便面阿
+
+“您真的太牛啦，我最近看您写得那些神经网络的文章，讲得特别清晰易懂，而且注释得超级详细呀，尤其是卷积那块，网上搜罗了一堆，原理都差不多，但就是有几个细节不是很清楚，看了你的文章茅塞顿开，真的是太详细啦~[哇]”——@深海青鱼
+
+
+
 # 目录
 
 ## 第 1 章 深度学习简介
 ## 第 2 章 环境配置
 ## 第 3 章 深度学习基础
-- [3.1 线性回归](https://mp.weixin.qq.com/s/DC5KhOElFvzC41QuheHfqQ)
-- [3.2 线性回归简洁实现](https://mp.weixin.qq.com/s/DC5KhOElFvzC41QuheHfqQ)
-- [3.3 梯度下降与反向传播](https://mp.weixin.qq.com/s/LvBKle1HaYkkDAlPw7xIlA)
-- [3.4 从零实现回归模型](https://mp.weixin.qq.com/s/KNq8yqZF_Bdc0cynrF5oEg)
-- [3.5 从逻辑回归到Softmax回归](https://mp.weixin.qq.com/s/RgPKdixw8cL35ty6Fp6v_Q)
-- [3.6 Softmax回归简洁实现](https://mp.weixin.qq.com/s/kdJqBsddT9DiXQ3CPtzl2g)
-- [3.7 从零实现分类模型](https://mp.weixin.qq.com/s/Kc7t1rxUzSiZ3sbATGwBfg)
-- [3.8 回归模型评估指标](https://mp.weixin.qq.com/s/a0Z2x0tR-Ov1z7OdKXajmQ)
-- [3.9 分类模型评估指标](https://mp.weixin.qq.com/s/ia9hP8q3E1MbtpjSF1oTpw)
-- [3.10 过拟合与正则化](https://mp.weixin.qq.com/s/ybtNmPc4Y0BMgtkhAL-XqA)
-- [3.11 超参数与交叉验证](https://mp.weixin.qq.com/s/ygvTqiTx4__V41cnwnc2Uw)
-- [3.12 激活函数](https://mp.weixin.qq.com/s/-FfUhIwSIW0A2E3www6YXQ)
+- 3.1 线性回归
+- 3.2 线性回归简洁实现
+- 3.3 梯度下降与反向传播
+- 3.4 从零实现回归模型
+- 3.5 从逻辑回归到Softmax回归
+- 3.6 Softmax回归简洁实现
+- 3.7 从零实现分类模型
+- 3.8 回归模型评估指标
+- 3.9 分类模型评估指标
+- 3.10 过拟合与正则化
+- 3.11 超参数与交叉验证
+- 3.12 激活函数
 ## 第 4 章 卷积神经网络
-- [4.1 卷积的概念](https://mp.weixin.qq.com/s/BWzs6hzS_5Cu38MrEZmo4Q)
-- [4.2 卷积的计算过程](https://mp.weixin.qq.com/s/RXIZD9xiNvVsvJqlUYrmhA)
-- [4.3 填充和池化](https://mp.weixin.qq.com/s/Li6GtIxCJn6gXktcTrs6OA)
-- [4.4 LeNet5模型](https://mp.weixin.qq.com/s/Li6GtIxCJn6gXktcTrs6OA)
-- [4.5 AlexNet模型](https://mp.weixin.qq.com/s/5AYMTe_QttplxwFscilolA)
-- [4.6 VGG模型](https://mp.weixin.qq.com/s/zTfYYG5uhttq5doMHVfgSQ)
-- [4.7 NIN模型](https://mp.weixin.qq.com/s/Js-Sv3N7nWJbr4O5JTz8fA)
-- [4.8 GoogLeNet模型](https://mp.weixin.qq.com/s/KCg2GSSIiQltw9B_Zn7r8A)
-- [4.9 ResNet模型](https://mp.weixin.qq.com/s/-J5fXRUm8EFrX5mw3AEv1Q)
-- [4.10 DenseNet模型](https://mp.weixin.qq.com/s/ei8yFfXL2cpms2SlssiReA)
+- 4.1 卷积的概念
+- 4.2 卷积的计算过程
+- 4.3 填充和池化
+- 4.4 LeNet5模型
+- 4.5 AlexNet模型
+- 4.6 VGG模型
+- 4.7 NIN模型
+- 4.8 GoogLeNet模型
+- 4.9 ResNet模型
+- 4.10 DenseNet模型
 ## 第 5 章 模型训练与复用
-- [5.1 参数及日志管理](https://mp.weixin.qq.com/s/JXGyKz7q5OCBTVbQg2zY5g)
-- [5.2 模型训练可视化](https://mp.weixin.qq.com/s/LAQGtKLvD3x8QZCfiMZ08A)
-- [5.3 模型保存与复用](https://mp.weixin.qq.com/s/mxwg9NN3RBFktiLIs3LGYA)
-- [5.4 模型的迁移学习](https://mp.weixin.qq.com/s/k61Ha_dX29qFBSD05yEyKw)
-- [5.5 开源模型复用](https://mp.weixin.qq.com/s/VVeViC9UmMHsNunsCHSEiw)
-- [5.6 多GPU训练](https://mp.weixin.qq.com/s/kd6RUz14M9SOGP_3rLZ5rg)
-- [5.7 数据预处理缓存](https://mp.weixin.qq.com/s/XdlOubKU42UCEBlDyRhUkg)
+- 5.1 参数及日志管理
+- 5.2 模型训练可视化
+- 5.3 模型保存与复用
+- 5.4 模型的迁移学习
+- 5.5 开源模型复用
+- 5.6 多GPU训练
+- 5.7 数据预处理缓存
 ## 第 6 章 模型优化与泛化
-- [6.1 学习率动态调整](https://mp.weixin.qq.com/s/DCi74Ng0w_izVE__dUOtsQ)
-- [6.2 梯度裁剪](https://mp.weixin.qq.com/s/540rSqs2m5_GkTxhIuuH0w)
-- [6.3 批归一化](https://mp.weixin.qq.com/s/qGpNauGAYWmntkPmK9gkxg)
-- [6.4 层归一化](https://mp.weixin.qq.com/s/NAQcKzz8LwiA-qAZkNSj8A)
-- [6.5 组归一化](https://mp.weixin.qq.com/s/quVgpNh01QhmUTxGfrpYbA)
-- [6.6 动量法](https://mp.weixin.qq.com/s/0ajVIn7XLa_5NN3lNnuUrA)
-- [6.7 AdaGrad算法](https://mp.weixin.qq.com/s/bwicwx8Oph8mDoBk-b6aOA)
-- [6.8 AdaDelta算法](https://mp.weixin.qq.com/s/PliDv3l-dyryBL2WIWge6Q)
-- [6.9 Adam算法](https://mp.weixin.qq.com/s/vABSefkxBoavF5TJ_Ct83g)
+- 6.1 学习率动态调整
+- 6.2 梯度裁剪
+- 6.3 批归一化
+- 6.4 层归一化
+- 6.5 组归一化
+- 6.6 动量法
+- 6.7 AdaGrad算法
+- 6.8 AdaDelta算法
+- 6.9 Adam算法
 ## 第 7 章 循环神经网络
-- [7.1 RNN模型](https://mp.weixin.qq.com/s/WtA5BKpTSrf4KR6qd9p3lg)
-- [7.2 时序数据](https://mp.weixin.qq.com/s/fCIudqaDZIzvSKnMKZzFPA)
-- [7.3 LSTM模型](https://mp.weixin.qq.com/s/OSLvVAWcpQBoRRyxEUKNgQ)
-- [7.4 GRU模型](https://mp.weixin.qq.com/s/foK4kYnTWWkHmRw0DkSm6w)
+- 7.1 RNN模型
+- 7.2 时序数据
+- 7.3 LSTM模型
+- 7.4 GRU模型
 ## 第 8 章 时序任务与模型融合
-- [8.1 TextCNN模型](https://mp.weixin.qq.com/s/q40ra671IoqRMSGzABCrAA)
-- [8.2 TextRNN模型](https://mp.weixin.qq.com/s/gAe1GNf3w6eD51n8q97vNg)
-- [8.3 CNN-RNN模型](https://mp.weixin.qq.com/s/US3eyWghAm_bBV5098jncQ)
-- [8.4 ConvLSTM模型](https://mp.weixin.qq.com/s/njzYllPh_GRPsRdAzDSs4A)
-- [8.5 3DCNN模型](https://mp.weixin.qq.com/s/fn4UG9RHSubgP9DJXJUlFg)
-- [8.6 STResNet模型](https://mp.weixin.qq.com/s/3JE0SyWq4YPAW1yxooRnVA)
+- 8.1 TextCNN模型
+- 8.2 TextRNN模型
+- 8.3 CNN-RNN模型
+- 8.4 ConvLSTM模型
+- 8.5 3DCNN模型
+- 8.6 STResNet模型
 ## 第 9 章 自然语言处理
-- [9.1 NLP介绍](https://mp.weixin.qq.com/s/S5laSi5fQimh6cumtGq_BQ)
-- [9.2 Word2Vec模型](https://mp.weixin.qq.com/s/O1Q4jlvKoyTEhQwkkZXGWQ)
-- [9.3 Word2Vec训练与使用](https://mp.weixin.qq.com/s/aCkTdMP402qVEJu3EkQkmQ)
-- [9.4 GloVe模型](https://mp.weixin.qq.com/s/2VkGCAOn4pvoBnCxma350g)
-- [9.5 词向量的微调使用](https://mp.weixin.qq.com/s/6dcxgPW-ZsBKKdQXtt02Gw)
-- [9.6 FastText模型](https://mp.weixin.qq.com/s/rpSolSNoesKe_TglVxQA4A)
-- [9.7 序列到序列模型](https://mp.weixin.qq.com/s/5y-OrinUYcfY4e9m_qJ6Zw)
-- [9.8 序列模型评估指标](https://mp.weixin.qq.com/s/S3t0Dt6SxblTYrjC55yDzQ)
-- [9.9 NMT模型](https://mp.weixin.qq.com/s/0T46pt8Wp6Io-qzphOIlYQ)
-- [9.10 注意力机制](https://mp.weixin.qq.com/s/u6CGRHBSVkS7TI3YIgndRg)
-- [9.11 含注意力的NMT模型](https://mp.weixin.qq.com/s/o7NtclC4r2CovTICtnlq4w)
-- [9.12 含注意力的RNN模型](https://mp.weixin.qq.com/s/RjghWxJoxPsdM4Xhfz-9LA)
+- 9.1 NLP介绍
+- 9.2 Word2Vec模型
+- 9.3 Word2Vec训练与使用
+- 9.4 GloVe模型
+- 9.5 词向量的微调使用
+- 9.6 FastText模型
+- 9.7 序列到序列模型
+- 9.8 序列模型评估指标
+- 9.9 NMT模型
+- 9.10 注意力机制
+- 9.11 含注意力的NMT模型
+- 9.12 含注意力的RNN模型
 ## 第 10章 现代神经网络
-- [10.1 ELMo模型](https://mp.weixin.qq.com/s/AlofyLyg_sPtHpzao0H2jg)
-- [10.2 Transformer模型](https://mp.weixin.qq.com/s/4vrU81JfgVDklRJkndiD4g)
-- [10.3 Transformer网络结构](https://mp.weixin.qq.com/s/sb8JyaXh9YdXu5KNtgsOfA)
-- [10.4 从零实现Transformer](https://mp.weixin.qq.com/s/LJSMMEReP638Ny0mb3Ov3Q)
-- [10.5 Transfromer对联模型](https://mp.weixin.qq.com/s/YKAuwm5RfUEHKZvIbGml0Q)
-- [10.6 BERT模型](https://mp.weixin.qq.com/s/S8cCRdzielk2O95K85czYA)
-- [10.7 从零实现BERT]
-- [10.8 BERT文本分类模型]
-- [10.9 BERT问题选择模型]
-- [10.10 BERT问题回答模型]
-- [10.11 BERT命名体识别模型]
-- [10.12 BERT从零训练]
-- [10.13 GPT-1模型]
-- [10.14 GPT-2与GPT-3模型]
-- [10.15 基于GPT-2的中文预训练模型]
-- [10.16 InstractGPT与ChatGPT]
-- [10.17 ChatGPT使用]
-- [10.18 百川大模型使用]
-- [10.19 百川大模型实现]
-- [10.20 GPT-4与GPTs介绍]
+- 10.1 ELMo模型
+- 10.2 Transformer模型
+- 10.3 Transformer网络结构
+- 10.4 从零实现Transformer
+- 10.5 Transfromer对联模型
+- 10.6 BERT模型
+- 10.7 从零实现BERT]
+- 10.8 BERT文本分类模型]
+- 10.9 BERT问题选择模型]
+- 10.10 BERT问题回答模型]
+- 10.11 BERT命名体识别模型]
+- 10.12 BERT从零训练]
+- 10.13 GPT-1模型]
+- 10.14 GPT-2与GPT-3模型]
+- 10.15 基于GPT-2的中文预训练模型]
+- 10.16 InstractGPT与ChatGPT]
+- 10.17 ChatGPT使用]
+- 10.18 百川大模型使用]
+- 10.19 百川大模型实现]
+- 10.20 GPT-4与GPTs介绍]
 
 # 插图
 
