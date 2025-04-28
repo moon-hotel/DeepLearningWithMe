@@ -35,8 +35,18 @@ class ConvLSTMCell(nn.Module):
         # 如：卷积核为3×3则需要padding=1即可
         # 在下面的卷积操作中stride使用的是默认值1
         self.bias = bias
-        self.conv = nn.Conv2d(in_channels=self.in_channels + self.out_channels,
-                              out_channels=4 * self.out_channels,
+        self.conv1 = nn.Conv2d(in_channels=self.in_channels + self.out_channels * 2, # 三部分输入
+                              out_channels=2 * self.out_channels, # 2 表示后续 split input_gate 和 forget_gate
+                              kernel_size=self.kernel_size,
+                              padding=self.padding,
+                              bias=self.bias)
+        self.conv2 = nn.Conv2d(in_channels=self.in_channels + self.out_channels, # 两部分
+                              out_channels=self.out_channels, # 
+                              kernel_size=self.kernel_size,
+                              padding=self.padding,
+                              bias=self.bias)
+        self.conv3 = nn.Conv2d(in_channels=self.in_channels + self.out_channels * 2, # 三部分
+                              out_channels=self.out_channels,
                               kernel_size=self.kernel_size,
                               padding=self.padding,
                               bias=self.bias)
@@ -49,18 +59,28 @@ class ConvLSTMCell(nn.Module):
         :return:
         """
         h_last, c_last = last_state
-        combined_input = torch.cat([input_tensor, h_last], dim=1)
-        # [batch_size, in_channels+out_channels, height, width]
-        combined_conv = self.conv(combined_input)  # [batch_size, 4 * out_channels, height, width]
-        cc_i, cc_f, cc_o, cc_g = torch.split(combined_conv, self.out_channels, dim=1)
+       
+        # 计算 input_gate 和 forget_gate
+        combined_input = torch.cat([input_tensor, h_last, c_last], dim=1)
+        # [batch_size, in_channels + 2 * out_channels, height, width]
+        combined_conv = self.conv1(combined_input)  # [batch_size, 2 * out_channels, height, width]
+        cc_i, cc_f = torch.split(combined_conv, self.out_channels, dim=1)
         # 分割得到每个门对应的卷积计算结果，形状均为 [batch_size, out_channels, height, width]
-        i = torch.sigmoid(cc_i)
-        f = torch.sigmoid(cc_f)
+        i = torch.sigmoid(cc_i) # input_gate
+        f = torch.sigmoid(cc_f) # forget_gate
+
+        # 计算 新输入 和 c
+        combined_input = torch.cat([input_tensor, h_last], dim=1)
+        cc_g = self.conv2(combined_input)  # [batch_size, out_channels, height, width]
+        g = torch.tanh(cc_g) # new input
+        c = f * c_last + i * g  # [batch_size, out_channels, height, width]
+        
+        # 计算  h
+        combined_input = torch.cat([input_tensor, h_last,c], dim=1)
+        cc_o = self.conv3(combined_input)
         o = torch.sigmoid(cc_o)
-        g = torch.tanh(cc_g)
-        c_next = f * c_last + i * g  # [batch_size, out_channels, height, width]
-        h_next = o * torch.tanh(c_next)  # [batch_size, out_channels, height, width]
-        return h_next, c_next
+        h = o * torch.tanh(c)  # [batch_size, out_channels, height, width]
+        return h, c
 
     def init_hidden(self, batch_size, image_size):
         """
@@ -70,8 +90,8 @@ class ConvLSTMCell(nn.Module):
         :return:
         """
         height, width = image_size
-        return (torch.zeros(batch_size, self.out_channels, height, width, device=self.conv.weight.device),
-                torch.zeros(batch_size, self.out_channels, height, width, device=self.conv.weight.device))
+        return (torch.zeros(batch_size, self.out_channels, height, width, device=self.conv1.weight.device),
+                torch.zeros(batch_size, self.out_channels, height, width, device=self.conv1.weight.device))
 
 
 class ConvLSTM(nn.Module):
