@@ -3,7 +3,9 @@
 <img width="300" src="https://moonhotel.oss-cn-shanghai.aliyuncs.com/images/230629150346.jpg"/> 
 </div>
 
-# 《跟我一起学深度学习》
+# 《跟我一起学深度学习》 
+
+勘误链接：https://u0ug2zo2s32.feishu.cn/wiki/DitMwCJ7IiHdsTkeYNjcI2NQnOd
 
 - 作 者: @空字符（微信：nulls8）
 - 公众号: @月来客栈
