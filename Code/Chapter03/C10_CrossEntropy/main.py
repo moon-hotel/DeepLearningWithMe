@@ -27,7 +27,16 @@ if __name__ == '__main__':
     l = loss(logits, y)
     print(l)  # tensor(0.9874)
 
+    log_probs = torch.log_softmax(logits, dim=1)
+    loss = -log_probs[range(len(y)), y]
+    print(loss.mean())
+
+    log_probs= torch.log(torch.softmax(logits, dim=1))
+    loss = -log_probs[range(len(y)), y]
+    print(loss.mean())
+
     logits = np.array([[0.5, 0.3, 0.6], [0.5, 0.4, 0.3]])
     y = np.array([2, 0])
     y_one_hot = np.eye(3)[y]
     print(crossEntropy(y_one_hot, softmax(logits)))  # 0.9874308806774512
+
