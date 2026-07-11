@@ -1,15 +1,14 @@
 
-<div align=center>
-<img width="300" src="https://moonhotel.oss-cn-shanghai.aliyuncs.com/images/230629150346.jpg"/> 
-</div>
+
 
 # 《跟我一起学深度学习》 
 
-勘误链接：https://u0ug2zo2s32.feishu.cn/wiki/DitMwCJ7IiHdsTkeYNjcI2NQnOd
+勘误链接：https://machinelearningwithme.com/dl/corrigenda/
 
 - 作 者: @空字符（微信：nulls8）
-- 公众号: @月来客栈
-- 知 乎: @月来客栈 https://www.zhihu.com/people/the_lastest
+- 公众号: @跟我学机器学习
+- 知 乎: @跟我学机器学习 https://www.zhihu.com/people/the_lastest
+- 网站（在线阅读地址）：https://machinelearningwithme.com
 
 <div align=center>
 <img width="600" src="imgs/20250327221901.jpg"/> 
